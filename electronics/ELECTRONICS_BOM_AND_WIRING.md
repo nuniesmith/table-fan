@@ -10,9 +10,9 @@
 | Li-ion Battery Pack | 1 | **4 × 18650 in 4S1P** (nominal 14.8 V / full charge 16.8 V). Cells from the linked AliExpress listing or equivalent quality 3000–3500 mAh cells | Power source |
 | Battery Management System (BMS) | 1 | **4S BMS** with cell balancing + over-charge / over-discharge / over-current / short protection (10–20 A common boards are fine) | Essential for safe 4S operation |
 | USB-C Charging Module | 1 | 4S-capable charger board or USB-C PD trigger + converter that can deliver 16.8 V CC/CV | Charge the pack via USB-C |
-| Buck Converter (strongly recommended) | 1 | Synchronous buck module set to **12.0 V** | Keeps the Noctua fan inside its official 12 V rating (max 13.2 V). Omit only if you accept running the fan at 14.8–16.8 V |
+| Buck Converter | 1 | Synchronous buck module set to **12.0 V** (e.g. MP1584 / XL4015 / better synchronous modules) | Required – keeps the Noctua fan inside its official 12 V rating |
 | Rotary Potentiometer or Switch | 1 | 10k linear pot, or 3–4 position rotary switch | User speed control (read by Pico ADC or GPIO) |
-| Power Switch (optional) | 1 | Small SPDT or latching | Hard power cut if desired (Pico can also soft-switch) |
+| Power Switch | 1 | Soft control via Pico + optional physical latching/SPDT for hard cut | Pico manages soft power; physical switch recommended for complete isolation |
 | USB-C Panel Mount or Breakout | 1 | Panel-mount USB-C or PCB module | External charge / data port |
 | Status LEDs / Display (optional) | 1–3 | Single LED or small SSD1306 OLED | Battery %, charging, fan speed indication |
 | Level shifter / MOSFET (optional) | 1 | If 3.3 V PWM needs buffering, or for high-side fan switch | Clean 12 V switching / PWM |
@@ -28,65 +28,63 @@ Looking at the connector (or cable end):
 
 **Recommendation**: Solder a short pigtail with a female 4-pin header inside the housing. Fan plugs into it. This matches the “wire in a 4pin fan connector” request.
 
-## High-Level Wiring Diagram (text) – 4S version
+## High-Level Wiring Diagram (text) – Final 4S + 12 V Buck
 ```
 USB-C Port ──► 4S Charger Module ──► 4S BMS ──► 4×18650 Pack (14.8 V nominal)
-                                      │
-                                      └──► voltage divider → Pico ADC (battery %)
+                │                    │
+                │                    └──► voltage divider → Pico ADC (battery %)
+                │
+                └──► charger status pin → Pico GPIO (charging detection)
 
-4S Pack (+) ──► Buck Converter (set to 12.0 V) ──► Fan Pin 2 (Yellow / Vcc)
+4S Pack (+) ──► Buck Converter (fixed 12.0 V) ──► Fan Pin 2 (Yellow / Vcc)
+            │                                 └──► (optional) high-side MOSFET controlled by Pico
             │
-            └──► (optional) Pico VSYS via suitable regulator / diode
+            └──► Pico VSYS (via diode or the Pico’s own regulator path)
 
 4S Pack (-) ──► common GND
 
-Pico GPIO (PWM, e.g. GP0) ──► Fan Pin 4 (Blue / PWM)
-Pico GPIO (optional)      ──► Fan Pin 3 (Green / Tach) + 10k pull-up to 3.3 V
+Pico GPIO (PWM capable) ──► Fan Pin 4 (Blue / PWM)
+Pico GPIO (optional)    ──► Fan Pin 3 (Green / Tach) + 10k pull-up to 3.3 V
 
-Pico ADC or GPIOs ──► Rotary pot / speed switch
-Pico 3.3 V / GND  ──► pot, status LEDs / OLED
-
-Optional hard on/off: Pico controls a logic-level MOSFET on the 12 V side.
+Pico ADC / GPIOs ──► Rotary pot or speed switch
+Pico GPIOs       ──► Power button / soft-power control
+Pico 3.3 V / GND ──► pot, status LEDs / small OLED
 ```
 
-**Note**: If you skip the buck and feed the fan directly from the 4S pack, just connect Pack (+) → Fan Yellow. The fan will run faster/louder and outside official voltage limits.
+## Pico Responsibilities (locked in)
+1. **Fan speed**: Read pot/switch → generate ~25 kHz PWM for the Noctua.
+2. **Power management**: Soft on/off (and optional hard cut via MOSFET). Respond to physical power switch.
+3. **Battery monitoring**: Read pack voltage via divider → estimate %, enforce low-voltage cutoff, show status.
+4. **Charging management**: Detect USB-C / charger status pin → indicate charging, optionally adjust behaviour while charging.
+5. **USB-C port**: Monitor VBUS presence (via Pico’s own USB or external sense).
+6. Optional: tach feedback, status LEDs or small OLED (battery %, charging, speed).
+7. Low-power sleep when the fan is off.
 
-## Pico Responsibilities (to implement later)
-1. Read speed control (pot or switch) → map to PWM duty cycle (0–100%).
-2. Generate ~25 kHz PWM on the fan control pin.
-3. Monitor battery voltage via divider → estimate % and enforce low-voltage cutoff (disable PWM / MOSFET).
-4. Optional: read tach for actual RPM feedback or stall detection.
-5. Optional: drive status LED or OLED (battery %, charging if USB detected, current speed).
-6. Soft power management / sleep when off.
-7. USB-C: if using Pico’s own USB, it can detect VBUS; otherwise monitor charger status pin.
-
-## Power Budget & Runtime (4S 18650)
-- Fan at 12 V (via buck): still ~3.6 W max
-- Fan fed directly from 4S (14.8–16.8 V): higher power draw and speed (expect 4.5–6 W+)
+## Power Budget & Runtime (4S + 12 V Buck)
+- Fan at regulated 12 V: ~3.6 W max
 - Pico + BMS + LEDs + buck losses: ~0.8–1.5 W
-- Conservative system total at full speed with buck: **≈ 5–6 W**
+- Conservative system total at full speed: **≈ 5–6 W**
 
 **Runtime estimate (4S1P, 3200–3500 mAh cells):**
 - Pack energy ≈ 47–52 Wh nominal
 - Usable after BMS cut-off & efficiency ≈ 38–43 Wh
 - At 5.5 W system load → **7–8 hours** at full speed
-- At medium speed easily 12–18+ hours
+- At medium/low speed easily 12–20+ hours
 
 (Upgrade to 4S2P later if you want even longer runtime.)
 
 ## Assembly Notes for Later
-- Keep high-current paths short and thick.
+- Keep high-current 12 V paths short and thick.
 - Separate signal GND from high-current paths where practical.
 - Mount Pico and modules on a small custom PCB or perfboard that slides into the electronics bay.
 - Provide strain relief for the USB-C cable and fan pigtail.
 - Label the 4-pin connector clearly (or key it).
 
-## Open Questions / Decisions Needed
+## Remaining Decisions
 - Exact cell capacity / brand (affects runtime)
-- Run fan direct from 4S or use the recommended 12 V buck?
-- Potentiometer vs multi-position switch
-- Include a small LED light bar like the commercial example?
-- OLED display or just LEDs?
-- Hard power switch in addition to soft control?
+- Speed control: continuous potentiometer vs 3–4 position rotary switch
+- Status indication: simple LEDs vs small OLED
+- Physical power switch style (latching, momentary for soft-power, or both)
+- Whether to include a small LED light bar like the commercial example
 
 Once the mechanical model is solid we can expand this into a full schematic (KiCad) and firmware skeleton.

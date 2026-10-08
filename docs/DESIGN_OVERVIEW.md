@@ -5,11 +5,11 @@
 - Removable front faceplate secured with 4× M2 × 6 mm screws (easy cleaning / blade access)
 - Standard 4-pin PC fan connector (Molex KK 254 or equivalent) so the fan can be unplugged and replaced
 - Raspberry Pi Pico 2 W controls:
-  - Power on/off
+  - Soft power on/off + physical power switch
   - Fan speed (PWM)
   - Battery monitoring / low-voltage cutoff
-  - USB-C charging status (if possible)
-- Rechargeable Li-ion battery: **4 × 18650 in 4S (14.8 V nominal)**
+  - USB-C charging detection & status
+- Rechargeable Li-ion battery: **4 × 18650 in 4S (14.8 V nominal)** → regulated 12 V buck → fan
 - USB-C charging port
 - Table-top stand + hanging capability (truck cab use)
 - Clean, compact aesthetic similar to commercial portable desk fans
@@ -20,7 +20,7 @@
 - Front cavity accepts the 120 mm fan with ~0.3–0.5 mm clearance
 - Fan mounting: 105 × 105 mm hole pattern (standard) using M3 screws + heat-set inserts or nuts on the rear side of the fan recess
 - Front face of the housing has 4× M2 threaded holes (or heat-set M2 inserts) at positions that allow the faceplate to clamp or sit flush
-- Bottom section: electronics bay for Pico + **4×18650 (4S)** + 4S BMS + charger + optional 12 V buck + USB-C breakout
+- Bottom section: electronics bay for Pico + **4×18650 (4S)** + 4S BMS + charger + 12 V buck + USB-C breakout
 - Rear: access panel or integrated cover for battery / electronics
 - Top: integrated handle / hanging loop
 - Bottom rear: fold-out or fixed kickstand for table use
@@ -43,9 +43,10 @@
 - Filament: PETG recommended (strength + temperature resistance). PLA OK for prototypes.
 
 ## Next Steps
-1. Decide whether to run the fan direct from 4S or use the recommended 12 V buck
-2. Add kickstand and hanging handle details
-3. Finalize 4S BMS + charger module choice
-4. Iterate OpenSCAD models / generate STLs once dimensions locked
+1. Add kickstand and hanging handle details to the OpenSCAD model
+2. Design a proper battery / electronics bay cover
+3. Choose specific 4S BMS + 12 V buck + USB-C charger modules
+4. Generate first printable STLs and test-fit the Noctua fan
+5. Move to firmware (Pico) and full schematic later
 
 Files live in `/models/` and `/docs/` and `/electronics/`.

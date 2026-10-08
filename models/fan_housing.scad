@@ -6,8 +6,8 @@
 // Author: Grok design for nuniesmith/table-fan
 
 /* [Main Dimensions] */
-outer_width = 135;          // Overall width/height of square body
-outer_depth = 58;           // Front-to-back depth (fan 25 + electronics bay + walls)
+outer_width = 140;          // Overall width/height of square body (slightly larger for 4S battery bay)
+outer_depth = 62;           // Front-to-back depth (fan 25 + electronics bay + walls)
 wall_thickness = 2.5;
 fan_size = 120;
 fan_thickness = 25;
@@ -20,12 +20,14 @@ use_heatset_m2 = true;
 
 /* [Faceplate Mounting] */
 // Positions of the 4 M2 holes relative to center (place them outside the fan frame or on the bezel)
-// 58 mm puts them near the corners of a 135 mm body – good for strength and aesthetics
+// 58 mm puts them near the corners of a 140 mm body – good for strength and aesthetics
 faceplate_screw_offset = 58; // distance from center to each M2 hole (MUST match faceplate.scad)
 
 /* [Electronics Bay] */
-electronics_bay_height = 28; // extra height at bottom for battery + Pico + modules
-bay_depth = 30;              // how deep the rear bay is
+// Sized for 4 × 18650 in 2×2 arrangement + 4S BMS + charger + Pico
+// Typical 2×2 18650 holder ≈ 40 × 78 × 20 mm; leave room for wiring and modules
+electronics_bay_height = 42; // extra height at bottom for battery + Pico + modules
+bay_depth = 38;              // how deep the rear bay is
 
 /* [Other] */
 handle_height = 18;

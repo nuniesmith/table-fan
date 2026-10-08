@@ -9,18 +9,18 @@
   - Fan speed (PWM)
   - Battery monitoring / low-voltage cutoff
   - USB-C charging status (if possible)
-- Rechargeable Li-ion battery (size TBD – see electronics section)
+- Rechargeable Li-ion battery: **4 × 18650 in 4S (14.8 V nominal)**
 - USB-C charging port
 - Table-top stand + hanging capability (truck cab use)
 - Clean, compact aesthetic similar to commercial portable desk fans
 
 ## Mechanical Overview
 ### Main Body (fan_housing.scad)
-- Outer dimensions target: ~135 × 135 × 55–65 mm (depth includes rear electronics bay + stand clearance)
+- Outer dimensions target: ~140 × 140 × 60–70 mm (depth includes rear electronics bay sized for 4×18650 + stand clearance)
 - Front cavity accepts the 120 mm fan with ~0.3–0.5 mm clearance
 - Fan mounting: 105 × 105 mm hole pattern (standard) using M3 screws + heat-set inserts or nuts on the rear side of the fan recess
 - Front face of the housing has 4× M2 threaded holes (or heat-set M2 inserts) at positions that allow the faceplate to clamp or sit flush
-- Bottom section: electronics bay for Pico, battery, boost converter, charger module, USB-C breakout
+- Bottom section: electronics bay for Pico + **4×18650 (4S)** + 4S BMS + charger + optional 12 V buck + USB-C breakout
 - Rear: access panel or integrated cover for battery / electronics
 - Top: integrated handle / hanging loop
 - Bottom rear: fold-out or fixed kickstand for table use
@@ -43,9 +43,9 @@
 - Filament: PETG recommended (strength + temperature resistance). PLA OK for prototypes.
 
 ## Next Steps
-1. Finalize battery size → adjust electronics bay dimensions
+1. Decide whether to run the fan direct from 4S or use the recommended 12 V buck
 2. Add kickstand and hanging handle details
-3. Electronics documentation (separate file)
+3. Finalize 4S BMS + charger module choice
 4. Iterate OpenSCAD models / generate STLs once dimensions locked
 
 Files live in `/models/` and `/docs/` and `/electronics/`.

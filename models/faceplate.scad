@@ -4,7 +4,7 @@
 // Matches fan_housing.scad
 
 /* [Parameters – keep in sync with housing] */
-outer_width = 135;
+outer_width = 140;          // MUST match fan_housing.scad
 faceplate_thickness = 2.8;
 fan_size = 120;
 grille_margin = 8;              // how much solid border around the grille
@@ -29,17 +29,6 @@ module faceplate() {
         // Main airflow opening (slightly smaller than fan for safety)
         translate([0,0,-1])
             cylinder(d=fan_size - 6, h=faceplate_thickness + 2);
-        
-        // Optional decorative / protective grille bars (simple radial or cross)
-        // Simple cross + ring for strength while keeping airflow high
-        // (comment out if you prefer fully open)
-        /*
-        for (a = [0, 45, 90, 135]) {
-            rotate([0,0,a])
-                translate([0,0,faceplate_thickness/2])
-                    cube([fan_size - 10, 2.2, faceplate_thickness + 1], center=true);
-        }
-        */
         
         // Protective but high-airflow grille: outer ring + 3 concentric rings + 6 spokes
         // Outer safety ring

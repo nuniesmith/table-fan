@@ -24,10 +24,21 @@ use_heatset_m2 = true;
 faceplate_screw_offset = 58; // distance from center to each M2 hole (MUST match faceplate.scad)
 
 /* [Electronics Bay] */
-// Sized for 4 × 18650 in 2×2 arrangement + 4S BMS + charger + Pico
+// Sized for 4 × 18650 in 2×2 arrangement + 4S BMS + charger + 12 V buck + 5 V buck.
+// MCU is the Waveshare RP2040-Zero (23.5 × 18 mm) – tiny; it solders via
+// castellated edges to a small carrier/perfboard or friction-fits in a slot.
+// No mounting holes on the Zero, so don't model standoffs for it.
 // Typical 2×2 18650 holder ≈ 40 × 78 × 20 mm; leave room for wiring and modules
-electronics_bay_height = 42; // extra height at bottom for battery + Pico + modules
+electronics_bay_height = 42; // extra height at bottom for battery + Zero + modules
 bay_depth = 38;              // how deep the rear bay is
+
+/* [RP2040-Zero USB-C access] */
+// Small slot in the rear panel so the Zero's USB-C can be reached for
+// firmware updates without opening the case. Position is a starting guess –
+// adjust y/z to match where you place the Zero in the bay.
+mcu_usb_cutout = true;
+mcu_usb_w = 10;  // USB-C plug width + clearance
+mcu_usb_h = 6;
 
 /* [Other] */
 handle_height = 18;
@@ -99,10 +110,15 @@ module housing() {
         translate([0, -outer_width/2 + electronics_bay_height/2 + 1, outer_depth - bay_depth/2 - 1])
             cube([outer_width - 2*wall_thickness - 2, electronics_bay_height - 2, bay_depth], center=true);
         
-        // USB-C cutout (bottom front or side – example on bottom front edge)
+        // USB-C cutout (charger input – bottom front edge)
         translate([0, -outer_width/2 + 8, 8])
             rotate([90,0,0])
                 cube([12, 6, 15], center=true);  // approximate USB-C panel cutout
+
+        // RP2040-Zero USB-C access slot (rear panel, electronics bay region)
+        if (mcu_usb_cutout)
+            translate([0, -outer_width/2 + electronics_bay_height/2, outer_depth - 1])
+                cube([mcu_usb_w, 10, mcu_usb_h + 4], center=true);
         
         // Cable path from fan area to electronics bay
         translate([0, -40, fan_thickness + 5])

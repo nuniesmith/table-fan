@@ -4,7 +4,7 @@
 
 ## Current Status
 - **Mechanical**: Initial OpenSCAD models for main housing and removable faceplate
-- **Electronics**: Fully documented BOM, pinout, wiring diagram, and Pico responsibilities (implementation later)
+- **Electronics**: Fully documented BOM, pinout, wiring diagram, and RP2040-Zero responsibilities (implementation later)
 - **Next**: Refine dimensions once battery size is chosen, add kickstand + handle details, generate STLs, then electronics prototype
 
 ## Folder Structure
@@ -31,8 +31,9 @@ table-fan/
 - Fits standard 120 × 120 × 25 mm fan (105 mm mounting pattern)
 - Removable faceplate held by 4× M2 × 6 mm screws for easy cleaning
 - Internal 4-pin fan connector for tool-free fan replacement
-- Electronics bay sized for Pico 2 W + battery + boost/charger modules
-- USB-C port cutout
+- Electronics bay sized for Waveshare RP2040-Zero + 4×18650 pack + charger/buck modules
+- USB-C port cutouts: charger input + RP2040-Zero programming access
+- Onboard WS2812 status LED on the Zero (no extra status LEDs needed)
 - Prepared for table stand + hanging handle
 
 ## Quick Start – Printing the Current Models

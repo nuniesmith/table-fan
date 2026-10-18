@@ -1,5 +1,7 @@
-// Removable Faceplate for 120mm Noctua Fan Housing
-// Secured with 4x M2 screws + M2 nuts (nuts sit in hex pockets in the housing)
+// Removable faceplate grille for the 120mm Noctua fan housing.
+// Print two: one screws onto the head's front face, one onto its rear face
+// (the fan's intake). Each takes 4x M2 x 6 countersunk screws into M2
+// heat-set inserts at the cardinal points of the head.
 // Units: mm
 // Matches fan_housing.scad
 

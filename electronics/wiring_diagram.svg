@@ -149,7 +149,7 @@
   <text x="935" y="602" text-anchor="middle" font-size="9" fill="#777">iPPC-3000</text>
 
   <!-- ============ ZERO ============ -->
-  <text x="30" y="512" font-size="11" fill="#777">CONTROL (carrier board on mezzanine, USB-C to rear cutout)</text>
+  <text x="30" y="512" font-size="11" fill="#777">CONTROL (carrier on the bottom plate, USB-C out the back)</text>
   <rect x="30" y="524" width="240" height="126" fill="#f0eaff" stroke="#333"/>
   <text x="150" y="544" text-anchor="middle" font-size="12" font-weight="bold">RP2040-Zero carrier</text>
   <text x="40" y="564" font-size="10" fill="#c0392b">5V pin &#8592; MP1584 #2</text>

@@ -58,7 +58,7 @@ solders down via its castellated edges or friction-fits in a printed slot.
 | GP14 | Fan header Pin 3 (Green / Tach) | Input + 10k pull-up to 3V3 (on carrier) |
 | GP26 (ADC0) | Battery divider tap | 100k (BMS P+) / 24k (GND) → ≤3.25 V at full charge (on carrier) |
 | GP13 | Charger module status pin | Charging detection |
-| GP12 (ADC) | Dial pot wiper | Speed setting (pot ends: 3V3 / GND) |
+| GP27 (ADC1) | Dial pot wiper | Speed setting (pot ends: 3V3 / GND) |
 | GP0 | OLED SDA | I2C0 SDA direct to the SSD1306 (3.3 V logic, no shifter) |
 | GP1 | OLED SCL | I2C0 SCL direct to the SSD1306 |
 | GP16 | Onboard WS2812 | Status LED – no extra parts needed |
@@ -71,8 +71,8 @@ simply boots at whatever speed the dial is set to.
 **Screen sleep (for truck sleeping):** the OLED turns off automatically 15 s
 after the dial stops moving (no light while you sleep). It wakes on dial
 movement, on USB plug-in (charger status pin), or on the screen button.
-The button toggles the screen manually. Remaining GPIOs (GP27/GP28 ADC1/ADC2,
-etc.) are spare for later (second fan, etc.).
+The button toggles the screen manually. Remaining GPIOs (GP28/ADC2, etc.)
+are spare for later (second fan, etc.).
 
 ## Pinout – Standard 4-pin PC Fan (Noctua)
 Looking at the connector (or cable end):
@@ -101,7 +101,7 @@ BMS P- ──► GND rail ──► Zero GND, fan header pin 1, buck grounds, po
 
 Zero GP15 ──► fan header pin 4 (PWM, ~25 kHz)
 Zero GP14 ──► fan header pin 3 (tach) + 10k pull-up to 3V3 (on carrier)
-Dial pot: ends to 3V3/GND, wiper ──► Zero GP12
+Dial pot: ends to 3V3/GND, wiper ──► Zero GP27
 Zero 3V3 ──► OLED VCC (check GND/VCC order on the silkscreen!)
 Zero GND ──► OLED GND
 Zero GP0 ──► OLED SDA, Zero GP1 ──► OLED SCL (direct, 3.3 V – no level shifter)
@@ -122,7 +122,7 @@ the correct step-down parts. (MT3608 is for USB 5 V → 12 V bench power only.)
 > pack voltage directly into the Zero's 5V/3V3 pins.
 
 ## RP2040-Zero Responsibilities (locked in)
-1. **Fan speed**: Read dial (GP12) → generate ~25 kHz PWM on GP15 for the Noctua. Full CCW = hard OFF via the dial switch (Zero unpowered); any CW position boots straight into that speed.
+1. **Fan speed**: Read dial (GP27) → generate ~25 kHz PWM on GP15 for the Noctua. Full CCW = hard OFF via the dial switch (Zero unpowered); any CW position boots straight into that speed.
 2. **Battery monitoring**: Read pack voltage via divider on GP26 (ADC0) → estimate %, enforce low-voltage cutoff, show status on the WS2812.
 3. **Charging management**: Detect charger status on GP13 → indicate charging on the WS2812, optionally pause the fan while charging.
 4. **USB-C ports**: the Zero's own USB-C is the programming/data port (rear cutout + collar); the panel-mount USB-C is charge-only via the charger module. Keep the two ports' roles separate.

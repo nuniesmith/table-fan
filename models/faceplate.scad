@@ -18,38 +18,38 @@ $fn = 64;
 
 module faceplate() {
     difference() {
-        // Outer plate – slightly smaller than housing for flush look, or match for flush
-        hull() {
-            for (x = [-1,1])
-                for (y = [-1,1])
-                    translate([x*(outer_width/2 - 4), y*(outer_width/2 - 4), 0])
-                        cylinder(d=8, h=faceplate_thickness);
-        }
-        
-        // Main airflow opening (slightly smaller than fan for safety)
-        translate([0,0,-1])
-            cylinder(d=fan_size - 6, h=faceplate_thickness + 2);
-        
-        // Protective but high-airflow grille: outer ring + 3 concentric rings + 6 spokes
-        // Outer safety ring
-        difference() {
-            cylinder(d=fan_size - 4, h=faceplate_thickness + 1);
-            cylinder(d=fan_size - 10, h=faceplate_thickness + 2);
-        }
-        // Inner rings
-        for (r = [22, 38, 52]) {
+        union() {
+            // Frame: rounded-square plate with circular opening
             difference() {
-                cylinder(d=r*2 + 2.5, h=faceplate_thickness + 1);
-                cylinder(d=r*2 - 2.5, h=faceplate_thickness + 2);
+                hull() {
+                    for (x = [-1,1])
+                        for (y = [-1,1])
+                            translate([x*(outer_width/2 - 4), y*(outer_width/2 - 4), 0])
+                                cylinder(d=8, h=faceplate_thickness);
+                }
+                translate([0,0,-1])
+                    cylinder(d=fan_size - 6, h=faceplate_thickness + 2);
+            }
+            // Grille: outer ring + 4 concentric rings + 24 spokes + hub
+            // (reference-style dense radial grille; gaps ~10-12mm)
+            difference() {
+                cylinder(d=fan_size - 4, h=faceplate_thickness);
+                cylinder(d=fan_size - 10, h=faceplate_thickness + 1);
+            }
+            for (r = [18, 30, 42, 52]) {
+                difference() {
+                    cylinder(d=r*2 + 2, h=faceplate_thickness);
+                    cylinder(d=r*2 - 2, h=faceplate_thickness + 1);
+                }
+            }
+            cylinder(d=30, h=faceplate_thickness);  // center hub
+            for (a = [0 : 15 : 345]) {
+                rotate([0,0,a])
+                    translate([36, 0, faceplate_thickness/2])
+                        cube([44, 2, faceplate_thickness], center=true);
             }
         }
-        // Spokes
-        for (a = [0 : 30 : 150]) {
-            rotate([0,0,a])
-                translate([0, 0, faceplate_thickness/2])
-                    cube([fan_size - 12, 1.8, faceplate_thickness + 1], center=true);
-        }
-        
+
         // M2 clearance holes (cardinal points - must match housing)
         for (a = [0, 90, 180, 270]) {
             rotate([0,0,a])

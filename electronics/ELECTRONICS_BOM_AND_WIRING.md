@@ -10,8 +10,8 @@ nothing is lost.
 **Mounting (locked in):** the bare Zero solders via its castellated edges to a
 perfboard **carrier (30×70 mm prototype PCB cut to ~30×25 mm)**. The carrier also holds the 100k/22k
 battery divider (+100 nF), the 10k tach pull-up (+1 nF), and the 4-pin fan header. The carrier
-screws to 4× M2 bosses on the mezzanine plate. The Zero's USB-C faces the rear
-cover cutout (with a printed strain-relief collar) – it is the **firmware /
+screws to 4× M2 bosses on the bottom plate. The Zero's USB-C faces the cutout
+in the base's rear wall (with a printed strain-relief collar) – it is the **firmware /
 programming port**, not the charger. (Friction-fit mounting was rejected:
 vibration would walk the board loose and stress the USB-C.)
 
@@ -27,7 +27,7 @@ vibration would walk the board loose and stress the USB-C.)
 | Battery sled (printed) | 1 | `models/battery_sled.scad` | Holds the 4 cells. Series straps: **tabbed cells or spot-welded nickel strip, never solder to the cell** (the heat damages its seal and vent) |
 | 4S BMS | 1 | **4S 40A *Balance* version** (the one labelled "4S 40A Balance", not the plain "4S 40A") | Balance + over-charge/discharge/current/short protection. The balance function keeps the 4 cells even – take the balance variant. 40 A is overkill for ~1 A load but harmless. **A BMS is NOT a charger (see next row).** Many of these boards are **common-port** (no C− pad): the charger then connects to P+/P− (see "Protection and sensing") |
 | 4S charger module | 1 | **4S 2 A Type-C boost charger module** (ordered) – multi 2S/3S/4S selectable, Type-C 5 V in → 16.8 V CC/CV out | **VERIFY the module is set to 4S before first charge.** On 5 V it charges at ~0.8 A at best, about 5 h for a full pack, not 2 A (see "Charging rate"). Output → BMS CHG+/CHG- (P+/P− on a common-port BMS, on the pack side of the fuse); works with the dial OFF. **Measure its status pin before wiring GP13** |
-| 0.96" OLED display | 1 | SSD1306 128×64 I2C module, 3.3–5 V, 3.3 V logic compatible | Battery %, charging, fan speed – small rear pod on the bay cover. **No level shifter needed** (unlike the 1602). **Check the silkscreen on arrival: modules ship with GND/VCC pin order random** |
+| 0.96" OLED display | 1 | SSD1306 128×64 I2C module, 3.3–5 V, 3.3 V logic compatible | Battery %, charging, fan speed – small pod on the base's rear wall. **No level shifter needed** (unlike the 1602). **Check the silkscreen on arrival: modules ship with GND/VCC pin order random** |
 | Buck converter (12 V) | 1 | **MP1584 mini** module set to **12.0 V** | Fan rail from the 4S pack (fan draws only 0.3 A – the mini is plenty) |
 | Buck converter (5 V) | 1 | **MP1584 mini** module set to **5.0 V** | **Powers the RP2040-Zero via its 5V pin.** The Zero exposes no VSYS pin, and 14.8–16.8 V straight from the 4S pack would destroy it (5.5 V max on any logic supply) |
 | Boost converter (bench) | 1 | **MT3608** module set to 12.0 V | USB-powered bench testing only – does NOT live in the fan |
@@ -38,9 +38,12 @@ vibration would walk the board loose and stress the USB-C.)
 | Fuse | 1 | 2 A fuse in an inline holder, or a 1.5 A PTC | At BMS P+, before the dial switch. The 40 A BMS alone would let a pinched wire burn |
 | Schottky (Zero 5 V feed) | 0–1 | SS14 or a spare 1N5819 | Only if the Zero's 5V pin is tied straight to USB VBUS (see "Protection and sensing") |
 | Status-pin protection | 0–1 | 10k + 1N4148 clamp to 3V3, or a PC817 optocoupler | Only if the charger's status pin measures above 3.3 V |
-| M2 screws + M2 nuts | 4+4 | M2×6 | Faceplate (nuts sit in hex pockets in the housing) |
-| M2 screws | 4 | M2×6 | Zero carrier to mezzanine bosses |
-| M3 screws + heat-set inserts | 4+4 | M3×10 | Rear bay cover |
+| M2 screws + heat-set inserts | 8+8 | M2×6 countersunk | Faceplates, front and rear |
+| M2 screws | 4 | M2×6 | Zero carrier to the bottom-plate bosses |
+| M3 screws + heat-set inserts | 8+8 | 4× M3×16 + 4× M3×8, countersunk | Head to base; bottom plate |
+| M3 screws + nuts | 4+4 | M3×30 | Fan, through its corner holes into the head's rear ledges |
+| M4 screws + heat-set inserts | 2+2 | M4×12 + 2 nylon washers | Bail pivots |
+| Other fixings | – | M2 self-tapping: sled 2× M2×8 + lid 4× M2×6, OLED pod 2× M2×10 + module 4× M2×5; 4 stick-on feet | See `docs/DESIGN_OVERVIEW.md` |
 | Wiring, heat-shrink | - | 18 AWG power, 26 AWG signal (on hand) | - |
 | 18650 slot charger | 1 | 2-slot standalone charger (bench) | Check/top-up cells before install – not part of the build |
 | Tactile button 6×6mm | 1 | Standard 6×6mm tactile switch (**to order** – not in the current parts order) | Screen on/off toggle on +X wall; wired to GP11 + GND |
@@ -215,27 +218,36 @@ turning slowly, until the BMS disconnects at about 10–11 V.
 Verdict: 4S1P covers the 12-hour target for anything short of full-blast-all-day.
 Go 4S2P (8 cells, ~380 g) only if you want 12+ h guaranteed at max speed.
 Cell weight: ~48 g each → 4S1P ≈ 190 g.
-**Note:** the current bay + sled fit 4S1P. 4S2P would need a wider/taller bay
-revision – keep the extra 4 cells as spares for now.
+**Note:** the base and sled fit 4S1P. 4S2P would need a taller base (a second
+layer of cells where the BMS now sits) – keep the extra 4 cells as spares for now.
 
 ## Mechanical Layout (matches fan_housing.scad)
-- **Bay floor**: printed 4×1 18650 sled (`models/battery_sled.scad`) at X -53..33, cells taped in.
-- **Mezzanine plate** (on 4× M3 standoffs): 4S BMS (X -60..-15) + charger module (X -12..28) + Zero carrier (X 32..62).
-  Carrier USB-C faces the rear cover cutout.
-- **Under the mezzanine** (right of the sled): 2× MP1584 mini bucks (12 V + 5 V).
-- **Rear**: screwed bay cover (4× M3 into heat-set inserts) with the Zero's USB-C cutout + strain-relief collar,
-  plus the **OLED pod** (small bump-out housing the 0.96" SSD1306 screen, glass facing rear).
-- **Charge port**: USB-C cutout on the -X base wall, wired to the charger module.
-- **Side (+X base wall)**: dial pot through-hole + knob recess; printed knob (`models/knob.scad`).
-- Fan wires route through the cable channel and pop up through the mezzanine notch.
+Since 2026-10-18 everything lives in the **base** under the fan, which runs 64 mm
+back behind the head; nothing sits behind the fan. Positions are X across
+(+X = left when facing the fan) and Z front to back, in mm; `models/assembly.scad`
+with `view = "base_layout"` shows them from above.
+- **Sled** (`models/battery_sled.scad`) on the bottom plate against the -X wall
+  (X -67..17, Z 11..88): 4 cells side by side, axes front to back, lid screwed on.
+- **On the sled's lid**: the 4S BMS (46 × 60 footprint at X -64..-18) and the 12 V buck.
+  Measure the BMS on arrival: up to about 50 × 75 fits the lid beside the buck.
+- **On the plate, +X side**: the charger module (X 19..44, Z 4..39) and the 5 V buck
+  (Z 42..64), on foam tape; the Zero carrier on 4 M2 bosses (X 25..50, Z 67..97),
+  its USB-C at the rear wall.
+- **+X wall**: dial pot (Z 24; knob recess cut from the outside), USB-C charge port
+  (Z 46), screen button (Z 62), all cut through to the inside.
+- **Rear wall**: the Zero's USB-C cutout + strain-relief collar, and the **OLED pod**:
+  a separate part on 2 screws, glass facing rear, which can be reprinted to fit the
+  real module (`oled_*` parameters).
+- **Fan cable**: down through the slot in the head's floor and the base's roof
+  (X 14..26), to the header on the carrier.
+- Bottom plate: 4× M3 countersunk into inserts; vent slots under the charger.
 
 ### Fan mounting
-Primary: 4× M3 screws through the 105 mm mounting holes (the model's top posts +
-bottom pillars). Run them through the Noctua's rubber anti-vibration pads – that
-is what the rubber is for, and it keeps the fan from walking under vibration.
-The faceplate then acts as a light secondary clamp and grille. Sandwich-only
-(faceplate pressure alone) is not recommended: 4× M2 in a 2.8 mm printed plate
-cannot apply even clamping force and the fan could shift.
+4× M3 × 30 from the front, through the fan's corner holes (105 mm pattern), into M3
+nuts sitting in pockets on the rear faces of the head's four corner ledges. The nuts
+are behind the ledges, so the bolts clamp the fan against them. Run the bolts through
+the Noctua's rubber anti-vibration pads if yours has them. The grilles front and
+rear are separate parts and don't hold the fan.
 
 ## Assembly Notes
 - Set both MP1584 outputs **before** connecting anything: 12.0 V (fan) and 5.0 V (Zero).

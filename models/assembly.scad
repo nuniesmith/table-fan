@@ -1,0 +1,52 @@
+// The whole fan assembled: head, base, bottom plate, OLED pod, both
+// faceplates, bail, battery sled, knob, with the fan, cells and boards as
+// ghosts. For looking at, not for printing: export each part from its own
+// file (see README).
+
+include <bail.scad>
+bail_part = "none";
+use <faceplate.scad>
+use <knob.scad>
+
+/* [View] */
+bail_angle = 0;                 // 0 = up (carry / hang); 157 = swung back onto the base
+show_faceplates = true;
+view = "full";                  // [full, cutaway, base_layout]: cutaway slices off the -X half;
+                                // base_layout shows the base below its roof, from above
+upright = true;                 // stand it up for OpenSCAD's Z-up view (the models are Y-up)
+
+module assembled() {
+    color("SteelBlue") head();
+    color("LightSteelBlue") base();
+    color("SlateGray") bottom_plate();
+    color("SteelBlue") oled_pod();
+    color("Orange") bail_at(bail_angle);
+    if (show_faceplates) color("DimGray") {
+        mirror([0, 0, 1]) faceplate();
+        translate([0, 0, head_depth]) faceplate();
+    }
+    color("Peru") sled_placed();
+    color("Black") translate([outer_width/2 + 1.5, pot_y, pot_z]) rotate([0, 90, 0]) knob();
+    // bought parts
+    color("Gainsboro", 0.5) fan_keepout();
+    color("Teal") cells_keepout();
+    color("Green") bms_keepout();
+    color("RoyalBlue") { charger_keepout(); buck1_keepout(); buck2_keepout(); }
+    color("Purple") carrier_keepout();
+    color("Gold") { pot_keepout(); usb_socket_keepout(); button_keepout(); }
+    color("Black") oled_keepout();
+}
+
+rotate(upright ? [90, 0, 180] : [0, 0, 0])
+    if (view == "cutaway")
+        difference() {
+            assembled();
+            translate([-200, -200, -50]) cube([200, 400, 300]);
+        }
+    else if (view == "base_layout")
+        intersection() {
+            assembled();
+            translate([-100, base_bottom - 1, -20]) cube([200, base_roof - base_bottom + 0.5, 160]);
+        }
+    else
+        assembled();

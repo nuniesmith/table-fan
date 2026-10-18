@@ -60,6 +60,10 @@ class SSD1306_I2C(framebuf.FrameBuffer):
         self.fill(0)
         self.show()
 
+    def contrast(self, value):
+        self.write_cmd(SET_CONTRAST)
+        self.write_cmd(value & 0xFF)
+
     def poweroff(self):
         self.write_cmd(SET_DISP | 0x00)
 

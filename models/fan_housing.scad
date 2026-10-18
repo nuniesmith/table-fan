@@ -62,6 +62,22 @@ oled_od = 12;                   // Z 65..77
 // Top-left kept at x=-66 (was moved to clear the old 1602 pod).
 cover_screws = [[-66,-20],[60,-20],[-60,-62],[60,-62]];
 
+/* [U-Bail Bracket] */
+// Side-pivot U-bail (models/bail.scad): hangs (~100 deg, pin out) or props
+// (~30 deg, stop pin in). Folds flat against the side walls; bar nests in a
+// groove under the base. Pivot at (Y=0, Z=50) clears the dial (Z=30) and USB-C.
+bail_pivot_y = 0; bail_pivot_z = 50;
+bail_arm_w = 8;    // arm width (Z)
+bail_arm_t = 5;    // arm thickness (X)
+bail_arm_l = 71;   // pivot center to bar center
+// Raised ribs on ±X walls (X 70..74, Z 43..59, Y -68..+10); 9mm channels
+// hold the 8mm arms flush, 7mm pockets hold the pivot discs.
+// USB-C charge port (left/+X wall, dial side) - moved from -X
+usb_y = -25; usb_z = 30;
+// Prop stop pin hole (M3 clearance, removable pin): pin IN = ~30 deg prop,
+// pin OUT = free swing past 100 deg for hanging. Position tuned by eye.
+stop_y = -12; stop_z = 60;
+
 /* [Render] */
 part = "housing";  // [housing, cover]
 
@@ -108,6 +124,13 @@ module housing() {
             // Bottom electronics base (taller: sled + mezzanine)
             translate([0, -outer_width/2 + electronics_bay_height/2 - 2, outer_depth/2])
                 rounded_cube([outer_width - 4, electronics_bay_height + 4, outer_depth - 2], r=3, center=true);
+
+            // Bail ribs (both side walls) - raised rails; arms nest into the
+            // channels so the folded bail sits flush with the rib tops.
+            // (0.2mm embedded into the wall for a clean union.)
+            for (sx = [1, -1])
+                translate([sx > 0 ? sx*outer_width/2 - 0.2 : sx*outer_width/2 - 4, -68, 43])
+                    cube([4.2, 78, 16]);
         }
 
         // Fan cavity (from front)
@@ -135,9 +158,40 @@ module housing() {
         translate([outer_width/2 - 4.5, pot_y, pot_z])
             rotate([0,90,0]) cylinder(d=knob_recess_d, h=knob_recess_depth);
 
-        // USB-C charge port cutout on the -X base wall (charger module inside)
-        translate([-outer_width/2 + 1, -50, 33])
-            cube([6, 10, 14]);
+        // USB-C charge port cutout on the +X wall (left side, dial side)
+        // Socket glues in from outside; pigtail wires reach the bay interior.
+        // Verify the opening against the real socket before printing.
+        translate([outer_width/2 - 4, usb_y - 6.5, usb_z - 5])
+            cube([8, 13, 10]);
+
+        // Screen button hole (+X wall, near dial) - 6x6mm tactile switch,
+        // glues in from outside. Wired to GP11 + GND (firmware: toggles OLED).
+        translate([outer_width/2 - 4, -41.5, 8.5])
+            cube([8, 7, 7]);
+
+        // Bail arm channels (both walls) - 9mm wide for 8mm arms (0.5/side play)
+        translate([outer_width/2 - 2, -68, 45.5]) cube([6, 74, 9]);
+        translate([-outer_width/2 - 4, -68, 45.5]) cube([6, 74, 9]);
+        // Pivot pockets (arm disc ends rotate here)
+        translate([outer_width/2 - 2, bail_pivot_y, bail_pivot_z])
+            rotate([0,90,0]) cylinder(r=7, h=6);
+        translate([-outer_width/2 - 4, bail_pivot_y, bail_pivot_z])
+            rotate([0,90,0]) cylinder(r=7, h=6);
+        // M4 heat-set insert pilots (8mm deep from channel floor)
+        translate([outer_width/2 - 10, bail_pivot_y, bail_pivot_z])
+            rotate([0,90,0]) cylinder(d=6, h=8.2);
+        translate([-outer_width/2 + 2, bail_pivot_y, bail_pivot_z])
+            rotate([0,90,0]) cylinder(d=6, h=8.2);
+
+        // Prop stop pin holes (M3 clearance, both walls) - removable pin
+        for (sx = [1, -1])
+            translate([sx*(outer_width/2 - 10), stop_y, stop_z])
+                rotate([0, sx*90, 0])
+                    cylinder(d=3.2, h=10);
+
+        // Bail bar groove under the base (bar nests here when folded)
+        translate([-80, -outer_width/2 - 4, bail_pivot_z - 4])
+            cube([160, 6, 8]);
 
         // Cable path from fan area up over the mezzanine into the bay
         translate([0, -40, fan_thickness + 5])

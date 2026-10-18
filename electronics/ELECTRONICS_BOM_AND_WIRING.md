@@ -32,7 +32,7 @@ vibration would walk the board loose and stress the USB-C.)
 | Buck converter (5 V) | 1 | **MP1584 mini** module set to **5.0 V** | **Powers the RP2040-Zero via its 5V pin.** The Zero exposes no VSYS pin, and 14.8–16.8 V straight from the 4S pack would destroy it (5.5 V max on any logic supply) |
 | Boost converter (bench) | 1 | **MT3608** module set to 12.0 V | USB-powered bench testing only – does NOT live in the fan |
 | Schottky diodes | 2 | **1N5819** (from diode kit) | Diode-OR the two 12 V sources (pack buck + bench boost) |
-| USB-C charge port | 1 | USB-C female socket, wired to charger module input | −X side-wall charge input |
+| USB-C charge port | 1 | USB-C female socket, wired to charger module input | +X side wall (left, dial side) – moved from -X for truck access |
 | Voltage divider (battery sense) | 2 | 100k + 24k resistors (¼ W) – on the carrier | Scales 16.8 V max → ~3.25 V for the Zero's ADC |
 | Pull-up resistor (tach) | 1 | 10k to 3.3 V – on the carrier | Noctua tach is open-collector |
 | M2 screws + M2 nuts | 4+4 | M2×6 | Faceplate (nuts sit in hex pockets in the housing) |
@@ -40,6 +40,7 @@ vibration would walk the board loose and stress the USB-C.)
 | M3 screws + heat-set inserts | 4+4 | M3×10 | Rear bay cover |
 | Wiring, heat-shrink | - | 18 AWG power, 26 AWG signal (on hand) | - |
 | 18650 slot charger | 1 | 2-slot standalone charger (bench) | Check/top-up cells before install – not part of the build |
+| Tactile button 6×6mm | 1 | Standard 6×6mm tactile switch (**to order** – not in the current parts order) | Screen on/off toggle on +X wall; wired to GP11 + GND |
 
 ## Pinout – Waveshare RP2040-Zero (from the board in the photo)
 Left edge (top→bottom): **5V, GND, 3V3, GP29, GP28, GP27, GP26, GP15 … GP8**.
@@ -57,16 +58,21 @@ solders down via its castellated edges or friction-fits in a printed slot.
 | GP14 | Fan header Pin 3 (Green / Tach) | Input + 10k pull-up to 3V3 (on carrier) |
 | GP26 (ADC0) | Battery divider tap | 100k (BMS P+) / 24k (GND) → ≤3.25 V at full charge (on carrier) |
 | GP13 | Charger module status pin | Charging detection |
-| GP12 (ADC) | Dial pot wiper | Speed setting (pot ends: 3V3 / GND) |
+| GP27 (ADC1) | Dial pot wiper | Speed setting (pot ends: 3V3 / GND) |
 | GP0 | OLED SDA | I2C0 SDA direct to the SSD1306 (3.3 V logic, no shifter) |
 | GP1 | OLED SCL | I2C0 SCL direct to the SSD1306 |
 | GP16 | Onboard WS2812 | Status LED – no extra parts needed |
+| GP11 | Screen button (tactile, to GND) | Manual OLED on/off toggle (internal pull-up) |
 
 **No pin for power on/off** – the dial's integrated switch breaks pack+ in
 hardware (BMS P+ → switch → VCC bus), so OFF is a true hard cut and the Zero
-simply boots at whatever speed the dial is set to. GP11 and the remaining
-GPIOs (GP27/GP28 ADC1/ADC2, etc.) are spare for later (OLED, extra buttons,
-second fan).
+simply boots at whatever speed the dial is set to.
+
+**Screen sleep (for truck sleeping):** the OLED turns off automatically 15 s
+after the dial stops moving (no light while you sleep). It wakes on dial
+movement, on USB plug-in (charger status pin), or on the screen button.
+The button toggles the screen manually. Remaining GPIOs (GP28/ADC2, etc.)
+are spare for later (second fan, etc.).
 
 ## Pinout – Standard 4-pin PC Fan (Noctua)
 Looking at the connector (or cable end):
@@ -95,11 +101,12 @@ BMS P- ──► GND rail ──► Zero GND, fan header pin 1, buck grounds, po
 
 Zero GP15 ──► fan header pin 4 (PWM, ~25 kHz)
 Zero GP14 ──► fan header pin 3 (tach) + 10k pull-up to 3V3 (on carrier)
-Dial pot: ends to 3V3/GND, wiper ──► Zero GP12
+Dial pot: ends to 3V3/GND, wiper ──► Zero GP27
 Zero 3V3 ──► OLED VCC (check GND/VCC order on the silkscreen!)
 Zero GND ──► OLED GND
 Zero GP0 ──► OLED SDA, Zero GP1 ──► OLED SCL (direct, 3.3 V – no level shifter)
 Zero GP16 ──► onboard WS2812 (status)
+Zero GP11 ──► tactile button ──► GND (screen toggle, internal pull-up)
 Zero USB-C ──► rear-panel cutout + collar (firmware/programming port)
 ```
 
@@ -115,7 +122,7 @@ the correct step-down parts. (MT3608 is for USB 5 V → 12 V bench power only.)
 > pack voltage directly into the Zero's 5V/3V3 pins.
 
 ## RP2040-Zero Responsibilities (locked in)
-1. **Fan speed**: Read dial (GP12) → generate ~25 kHz PWM on GP15 for the Noctua. Full CCW = hard OFF via the dial switch (Zero unpowered); any CW position boots straight into that speed.
+1. **Fan speed**: Read dial (GP27) → generate ~25 kHz PWM on GP15 for the Noctua. Full CCW = hard OFF via the dial switch (Zero unpowered); any CW position boots straight into that speed.
 2. **Battery monitoring**: Read pack voltage via divider on GP26 (ADC0) → estimate %, enforce low-voltage cutoff, show status on the WS2812.
 3. **Charging management**: Detect charger status on GP13 → indicate charging on the WS2812, optionally pause the fan while charging.
 4. **USB-C ports**: the Zero's own USB-C is the programming/data port (rear cutout + collar); the panel-mount USB-C is charge-only via the charger module. Keep the two ports' roles separate.

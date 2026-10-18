@@ -11,7 +11,9 @@
 - **Single dial switch**: WH138 B10K with rotary on/off click (confirmed – aluminum knob included) – full CCW clicks OFF (hard power cut), CW sweeps slowest → fastest. No separate power button.
 - Rechargeable Li-ion battery: **4 × 18650 in 4S1P (14.8 V nominal)** in a printed sled → MP1584 mini 12 V buck → fan; MP1584 mini 5 V buck → RP2040-Zero
 - USB-C charging port (rear cover, via 4S charger module – charges with dial OFF) + Zero USB-C programming port (rear cutout + strain-relief collar)
-- Table-top stand + hanging capability (truck cab use) – folding bracket, folds back into the body (design session pending)
+- **U-bail bracket** (`models/bail.scad`): side-pivot U-bracket for truck use – hangs from a wall hook (~100°, stop pins out) or props on a table (~30°, M3 stop pins in). Arms nest into channels in raised side ribs so the folded bail sits **flush** with the body (reference-style); pivot discs rotate in pockets, M4 screws into heat-set inserts (friction pivots). Bar nests in a groove under the base.
+- **Faceplate grille**: dense radial grille (outer ring + 4 concentric rings + 24 spokes + hub, ~10-12mm gaps) like the reference – finger-safe for the 3000 RPM fan.
+- **Screen button**: 6×6mm tactile on the +X wall by the dial (GP11) – manual OLED toggle; OLED also auto-sleeps 15 s after the dial stops and wakes on dial/USB.
 - Clean, compact aesthetic similar to commercial portable desk fans
 
 ## Mechanical Overview
@@ -50,9 +52,8 @@
 - Filament: PETG recommended (strength + temperature resistance). PLA OK for prototypes.
 
 ## Next Steps
-1. Folding bracket design session (hang/prop stand that folds back into the body)
-2. Generate first printable STLs and test-fit the Noctua fan + sled + carrier
-3. Firmware skeleton for the RP2040-Zero (PWM + ADC dial + battery sense + WS2812)
-4. Full KiCad schematic later if wanted
+1. Generate first printable STLs and test-fit the Noctua fan + sled + carrier + bail
+2. Firmware skeleton for the RP2040-Zero (PWM + ADC dial + battery sense + WS2812)
+3. Full KiCad schematic later if wanted
 
 Files live in `/models/` and `/docs/` and `/electronics/`.

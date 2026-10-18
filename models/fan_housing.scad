@@ -1,54 +1,74 @@
 // Portable 120mm Noctua Fan Housing
 // Compatible with NF-F12 industrialPPC-3000 PWM (120x120x25 mm)
 // Mounting hole spacing: 105 mm center-to-center
-// Designed for removable M2 faceplate and internal 4-pin connector
+// Designed for removable M2 faceplate (screws + nuts) and internal 4-pin connector
 // Units: millimeters
-// Author: Grok design for nuniesmith/table-fan
+// Author: Grok design for nuniesmith/table-fan, reworked Oct 2026
+//
+// LAYOUT (two level):
+//   Bay floor : printed 4x1 18650 sled (models/battery_sled.scad) at X -53..33
+//   Mezzanine : 4S BMS (X -60..-15) + 4S charger module (X -12..28)
+//               + RP2040-Zero carrier board (X 32..62, USB-C faces rear)
+//   Under mezzanine (right of sled): 2x MP1584 mini bucks (12V fan, 5V MCU)
+//   Rear cover: screwed plate + OLED pod (0.96" SSD1306)  + Zero USB-C cutout
+//               with strain-relief collar
+//   +X wall   : 16mm dial pot with on/off click (speed + hard power, one knob)
+//   -X wall   : USB-C charge port cutout
 
 /* [Main Dimensions] */
-outer_width = 140;          // Overall width/height of square body (slightly larger for 4S battery bay)
-outer_depth = 62;           // Front-to-back depth (fan 25 + electronics bay + walls)
+outer_width = 140;          // body width/height
+outer_depth = 62;           // front-to-back depth
 wall_thickness = 2.5;
 fan_size = 120;
 fan_thickness = 25;
 fan_clearance = 0.4;        // radial clearance around fan
 mount_spacing = 105;        // standard 120mm fan hole spacing
-mount_hole_d = 3.4;         // for M3 screw (clearance)
-m2_hole_d = 1.7;            // for M2 screw into plastic or insert
-m2_insert_d = 3.2;          // if using heat-set M2 inserts (adjust to your insert)
-use_heatset_m2 = true;
+mount_hole_d = 3.4;         // M3 clearance
 
 /* [Faceplate Mounting] */
-// Positions of the 4 M2 holes relative to center (place them outside the fan frame or on the bezel)
-// 58 mm puts them near the corners of a 140 mm body – good for strength and aesthetics
-faceplate_screw_offset = 58; // distance from center to each M2 hole (MUST match faceplate.scad)
+// 4x M2 screw + nut at the cardinal points, in solid plastic outside the fan
+// cavity. MUST match faceplate.scad (offset + angles).
+faceplate_screw_offset = 66;
+m2_clearance_d = 2.4;
+m2_nut_pocket_d = 5.0;      // hex across corners (M2 nut ~4.6)
+m2_nut_pocket_depth = 2.8;
 
 /* [Electronics Bay] */
-// Sized for 4 × 18650 in 2×2 arrangement + 4S BMS + charger + 12 V buck + 5 V buck.
-// MCU is the Waveshare RP2040-Zero (23.5 × 18 mm) – tiny; it solders via
-// castellated edges to a small carrier/perfboard or friction-fits in a slot.
-// No mounting holes on the Zero, so don't model standoffs for it.
-// Typical 2×2 18650 holder ≈ 40 × 78 × 20 mm; leave room for wiring and modules
-electronics_bay_height = 42; // extra height at bottom for battery + Zero + modules
-bay_depth = 38;              // how deep the rear bay is
+electronics_bay_height = 54;   // taller base: sled + mezzanine + modules
+bay_depth = 38;
+bay_inner_w = outer_width - 2*wall_thickness - 11;  // 129 -> +/-64.5
+mezzanine_thickness = 2.5;
+mezzanine_y0 = -40;            // bottom face of mezzanine plate
 
-/* [RP2040-Zero USB-C access] */
-// Small slot in the rear panel so the Zero's USB-C can be reached for
-// firmware updates without opening the case. Position is a starting guess –
-// adjust y/z to match where you place the Zero in the bay.
-mcu_usb_cutout = true;
-mcu_usb_w = 10;  // USB-C plug width + clearance
-mcu_usb_h = 6;
+/* [Dial Switch] */
+// 16mm pot with rotary on/off switch, side-mounted on the +X base wall.
+// Full CCW clicks OFF (hard power cut); CW sweeps slowest -> fastest.
+pot_y = -54;
+pot_z = 30;
+pot_hole_d = 7.5;           // 6-7mm threaded bushing + clearance
+knob_recess_d = 20;
+knob_recess_depth = 2.5;
 
-/* [Other] */
-handle_height = 18;
-stand_slot = true;
+/* [Rear Cover + OLED pod] */
+cover_t = 3;
+// 0.96" SSD1306 OLED (128x64, I2C, ~27x27mm PCB) lives in a small bump-out
+// pod on the cover, rear-facing. PCB corner holes ~23mm apart - verify
+// against the real module before printing. Modules ship with GND/VCC pin
+// order random - check the silkscreen on arrival.
+oled_ox0 = -38; oled_ow = 40;   // X -38..2
+oled_oy0 = -50; oled_oh = 32;   // Y -50..-18
+oled_od = 12;                   // Z 65..77
+// Cover screw positions (must match corner blocks below).
+// Top-left kept at x=-66 (was moved to clear the old 1602 pod).
+cover_screws = [[-66,-20],[60,-20],[-60,-62],[60,-62]];
+
+/* [Render] */
+part = "housing";  // [housing, cover]
 
 $fn = 64;
 
 // ---------- Helper modules ----------
 module rounded_cube(size, r=3, center=false) {
-    // simple rounded cube
     hull() {
         for (x = [r, size[0]-r])
             for (y = [r, size[1]-r])
@@ -65,93 +85,201 @@ module fan_mount_holes() {
                 cylinder(d=mount_hole_d, h=20, center=true);
 }
 
-module m2_faceplate_holes(depth=15) {
-    for (a = [45, 135, 225, 315]) {
+// M2 nut pockets (front face) + clearance holes, cardinal points
+module faceplate_holes() {
+    for (a = [0, 90, 180, 270])
         rotate([0,0,a])
-            translate([faceplate_screw_offset, 0, 0])
-                if (use_heatset_m2)
-                    cylinder(d=m2_insert_d, h=depth);
-                else
-                    cylinder(d=m2_hole_d, h=depth);
-    }
+            translate([faceplate_screw_offset, 0, 0]) {
+                translate([0,0,-0.1])
+                    cylinder(d=m2_nut_pocket_d, h=m2_nut_pocket_depth+0.1, $fn=6);
+                translate([0,0,-0.1])
+                    cylinder(d=m2_clearance_d, h=14);
+            }
 }
 
 // ---------- Main Housing ----------
 module housing() {
     difference() {
-        // Outer shell
         union() {
             // Main square body
             translate([0,0,outer_depth/2])
                 rounded_cube([outer_width, outer_width, outer_depth], r=4, center=true);
-            
-            // Bottom electronics extension (makes a slightly taller base)
+
+            // Bottom electronics base (taller: sled + mezzanine)
             translate([0, -outer_width/2 + electronics_bay_height/2 - 2, outer_depth/2])
                 rounded_cube([outer_width - 4, electronics_bay_height + 4, outer_depth - 2], r=3, center=true);
         }
-        
+
         // Fan cavity (from front)
         translate([0, 0, fan_thickness/2 + 1])
             cube([fan_size + 2*fan_clearance, fan_size + 2*fan_clearance, fan_thickness + 4], center=true);
-        
-        // Slightly larger rear opening for airflow / cable
+
+        // Slightly larger rear opening for airflow
         translate([0, 0, outer_depth - 8])
             cube([fan_size - 10, fan_size - 10, 20], center=true);
-        
-        // Fan mounting holes (M3) – through the rear wall of the fan recess
+
+        // Fan mounting holes (M3) - through the rear wall of the fan recess
         translate([0, 0, fan_thickness + 3])
             fan_mount_holes();
-        
-        // M2 faceplate screw holes / insert pockets (from front face)
-        translate([0, 0, -0.1])
-            m2_faceplate_holes(depth=8);
-        
-        // Electronics bay cavity (rear lower section)
-        translate([0, -outer_width/2 + electronics_bay_height/2 + 1, outer_depth - bay_depth/2 - 1])
-            cube([outer_width - 2*wall_thickness - 2, electronics_bay_height - 2, bay_depth], center=true);
-        
-        // USB-C cutout (charger input – bottom front edge)
-        translate([0, -outer_width/2 + 8, 8])
-            rotate([90,0,0])
-                cube([12, 6, 15], center=true);  // approximate USB-C panel cutout
 
-        // RP2040-Zero USB-C access slot (rear panel, electronics bay region)
-        if (mcu_usb_cutout)
-            translate([0, -outer_width/2 + electronics_bay_height/2, outer_depth - 1])
-                cube([mcu_usb_w, 10, mcu_usb_h + 4], center=true);
-        
-        // Cable path from fan area to electronics bay
+        // Faceplate M2 nut pockets + clearance (front face)
+        faceplate_holes();
+
+        // Electronics bay cavity - OPEN at the rear (serviced via bay cover)
+        translate([0, -outer_width/2 + electronics_bay_height/2 + 1, outer_depth - bay_depth/2 - 0.5])
+            cube([bay_inner_w, electronics_bay_height, bay_depth + 2], center=true);
+
+        // Dial pot: hole through +X base wall + knob recess on the outer face
+        translate([outer_width/2 - 7, pot_y, pot_z])
+            rotate([0,90,0]) cylinder(d=pot_hole_d, h=10);
+        translate([outer_width/2 - 4.5, pot_y, pot_z])
+            rotate([0,90,0]) cylinder(d=knob_recess_d, h=knob_recess_depth);
+
+        // USB-C charge port cutout on the -X base wall (charger module inside)
+        translate([-outer_width/2 + 1, -50, 33])
+            cube([6, 10, 14]);
+
+        // Cable path from fan area up over the mezzanine into the bay
         translate([0, -40, fan_thickness + 5])
             cube([12, 30, 10], center=true);
-        
-        // Optional: hanging handle cutout / lightening
+
+        // Hanging handle cutout
         translate([0, outer_width/2 - 8, outer_depth/2])
             rotate([90,0,0])
                 cylinder(d=22, h=20, center=true);
     }
-    
-    // Internal features: fan seat lip
+
+    // Fan seat lip
     difference() {
         translate([0, 0, 1.5])
             cube([fan_size + 6, fan_size + 6, 3], center=true);
         translate([0, 0, 1.5])
             cube([fan_size + 2*fan_clearance, fan_size + 2*fan_clearance, 5], center=true);
-        fan_mount_holes();
     }
-    
-    // Mounting posts or bosses for M3 (optional reinforcement)
+
+    // Top fan mount posts (solid plastic here)
     for (x = [-1, 1])
-        for (y = [-1, 1])
-            translate([x*mount_spacing/2, y*mount_spacing/2, fan_thickness + 1])
-                difference() {
-                    cylinder(d=8, h=6);
-                    cylinder(d=mount_hole_d, h=8);
-                }
+        translate([x*mount_spacing/2, mount_spacing/2, fan_thickness + 1])
+            difference() {
+                cylinder(d=8, h=6);
+                cylinder(d=mount_hole_d, h=8);
+            }
+
+    // Bottom fan mount pillars: solid ribs in the bay carrying the lower
+    // fan screws (the bay void removed the original posts here)
+    for (x = [-1, 1])
+        difference() {
+            translate([x*mount_spacing/2 - 5.5, -69, 26]) cube([11, 22, 10]);
+            translate([x*mount_spacing/2, -52.5, 25]) cylinder(d=mount_hole_d, h=12);
+        }
+
+    // Mezzanine plate (BMS + charger + Zero carrier live on top)
+    difference() {
+        translate([-62, mezzanine_y0, 25]) cube([124, mezzanine_thickness, 34]);
+        // cable notch: fan wires come up through here
+        translate([-7, mezzanine_y0 - 0.1, 24]) cube([14, mezzanine_thickness + 0.2, 12]);
+    }
+
+    // Mezzanine standoffs (M3) from the bay floor.
+    // Positions dodge the sled (X -53..33, Z 25..49), pillars and dial pot.
+    for (p = [[38,44],[38,56],[-58,44],[-20,56]])
+        difference() {
+            translate([p[0] - 3.5, -68, p[1] - 3.5]) cube([7, 28, 7]);
+            translate([p[0], -69, p[1]]) rotate([90,0,0]) cylinder(d=3.2, h=30);
+        }
+
+    // Zero carrier bosses (4x M2) on the mezzanine.
+    // Carrier: 30x25 perfboard at X 32..62, Z 34..59; Zero USB-C faces the rear.
+    for (cx = [34, 60]) for (cz = [36, 57])
+        difference() {
+            translate([cx - 2.25, mezzanine_y0 + mezzanine_thickness, cz - 2.25])
+                cube([4.5, 6, 4.5]);
+            translate([cx, mezzanine_y0 + mezzanine_thickness - 0.5, cz])
+                cylinder(d=1.8, h=8);
+        }
+
+    // Rear cover corner blocks with M3 heat-set insert holes (cover screws)
+    for (p = cover_screws)
+        difference() {
+            translate([p[0] > 0 ? 53 : -67, p[1] > -40 ? -26 : -68, 52])
+                cube([14, 12, 10]);
+            translate([p[0], p[1], 51.9])
+                cylinder(d=4.2, h=10.2);
+        }
 }
 
-// Render
-housing();
+// Strain-relief collar for the Zero's USB-C (on the bay cover, outer face)
+module usb_collar() {
+    difference() {
+        translate([38, -37, outer_depth + cover_t]) cube([18, 14, 8]);
+        translate([41, -34, outer_depth + cover_t - 0.1]) cube([12, 8, 8.2]);
+    }
+}
 
-// Preview fan (ghost)
-%translate([0,0,fan_thickness/2 + 1])
-    cube([fan_size, fan_size, fan_thickness], center=true);
+// OLED pod: small bump-out on the bay cover housing a 0.96" SSD1306 OLED
+// (128x64, I2C, ~27x27mm PCB). The module drops in from the bay side before
+// the cover is screwed on; its screen shows through the rear window.
+// Screws go in from outside: rear-wall clearance holes -> PCB holes ->
+// standoff post pilots.
+module oled_pod() {
+    difference() {
+        // outer shell
+        translate([oled_ox0, oled_oy0, outer_depth + cover_t])
+            cube([oled_ow, oled_oh, oled_od]);
+        // hollow interior (breaks through the cover plate for the wires)
+        translate([oled_ox0 + 2, oled_oy0 + 2, outer_depth + cover_t - 1])
+            cube([oled_ow - 4, oled_oh - 4, oled_od - 3]);
+        // screen window in the rear wall (wall: Z 73..77)
+        translate([oled_ox0 + 7, oled_oy0 + 9.5, outer_depth + cover_t + oled_od - 4.1])
+            cube([oled_ow - 14, 13, 4.2]);
+        // 4x M2 clearance holes through the rear wall (PCB corner holes, ~23mm apart)
+        for (hx = [oled_ox0 + 8.5, oled_ox0 + oled_ow - 8.5])
+            for (hy = [oled_oy0 + 4.5, oled_oy0 + oled_oh - 4.5])
+                translate([hx, hy, outer_depth + cover_t + oled_od - 4.1])
+                    cylinder(d=2.4, h=4.2);
+    }
+    // standoff posts the OLED PCB screws to (M2 self-tap pilots)
+    for (hx = [oled_ox0 + 8.5, oled_ox0 + oled_ow - 8.5])
+        for (hy = [oled_oy0 + 4.5, oled_oy0 + oled_oh - 4.5])
+            difference() {
+                translate([hx - 2.5, hy - 2.5, outer_depth + cover_t])
+                    cube([5, 5, 8]);
+                translate([hx, hy, outer_depth + cover_t - 0.1])
+                    cylinder(d=1.8, h=8.2);
+            }
+}
+
+// ---------- Rear Bay Cover (separate printed part) ----------
+module bay_cover() {
+    difference() {
+        // plate overlaps the opening onto the housing face
+        translate([-68.5, -70, outer_depth]) cube([137, 58, cover_t]);
+        // 4x M3 clearance for the corner-block screws
+        // (top-left kept at x=-66, clears the OLED pod)
+        for (p = cover_screws)
+            translate([p[0], p[1], outer_depth - 0.1])
+                cylinder(d=3.4, h=cover_t + 0.2);
+        // Zero USB-C (programming port) cutout - aligns with carrier at X~47
+        translate([41, -34, outer_depth - 0.1]) cube([12, 8, cover_t + 0.2]);
+        // OLED pass-through (the pod sits over this opening)
+        translate([oled_ox0 + 2, oled_oy0 + 2, outer_depth - 0.1])
+            cube([oled_ow - 4, oled_oh - 4, cover_t + 0.2]);
+    }
+    usb_collar();
+    oled_pod();
+}
+
+// ---------- Render ----------
+if (part == "housing") {
+    housing();
+    // ghost previews
+    %translate([0,0,fan_thickness/2 + 1])
+        cube([fan_size, fan_size, fan_thickness], center=true);
+    %translate([-10, -66, 37])  // battery sled envelope (see models/battery_sled.scad)
+        cube([86, 22, 24], center=true);
+} else if (part == "cover") {
+    bay_cover();
+} else {
+    housing();
+    translate([0, 0, 90]) bay_cover();
+}

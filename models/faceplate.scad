@@ -1,5 +1,5 @@
 // Removable Faceplate for 120mm Noctua Fan Housing
-// Secured with 4× M2 × 6 mm screws
+// Secured with 4x M2 screws + M2 nuts (nuts sit in hex pockets in the housing)
 // Units: mm
 // Matches fan_housing.scad
 
@@ -8,7 +8,7 @@ outer_width = 140;          // MUST match fan_housing.scad
 faceplate_thickness = 2.8;
 fan_size = 120;
 grille_margin = 8;              // how much solid border around the grille
-faceplate_screw_offset = 58;    // MUST match housing
+faceplate_screw_offset = 66;    // MUST match housing (cardinal points now)
 m2_clearance_d = 2.2;           // clearance hole for M2 screw
 use_countersink = true;
 countersink_d = 4.2;
@@ -50,8 +50,8 @@ module faceplate() {
                     cube([fan_size - 12, 1.8, faceplate_thickness + 1], center=true);
         }
         
-        // M2 clearance holes
-        for (a = [45, 135, 225, 315]) {
+        // M2 clearance holes (cardinal points - must match housing)
+        for (a = [0, 90, 180, 270]) {
             rotate([0,0,a])
                 translate([faceplate_screw_offset, 0, -0.1]) {
                     cylinder(d=m2_clearance_d, h=faceplate_thickness + 1);

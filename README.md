@@ -3,9 +3,9 @@
 3D-printable enclosure + electronics for a rechargeable desk/truck fan based on the Noctua NF-F12 industrialPPC-3000 PWM.
 
 ## Current Status
-- **Mechanical**: Initial OpenSCAD models for main housing and removable faceplate
-- **Electronics**: Fully documented BOM, pinout, wiring diagram, and RP2040-Zero responsibilities (implementation later)
-- **Next**: Refine dimensions once battery size is chosen, add kickstand + handle details, generate STLs, then electronics prototype
+- **Mechanical**: Design pass 2 – two-level electronics bay (printed 4×1 18650 sled on bay floor, mezzanine plate for BMS + charger + Zero carrier), rear bay cover with LCD pod + Zero USB-C cutout, dial pot on +X wall, charge port on −X wall, faceplate on M2 screws + nuts
+- **Electronics**: Fully documented BOM, pinout, wiring diagram (SVG schematic), and RP2040-Zero responsibilities (implementation later). Parts ordered Oct 17, 2026.
+- **Next**: Folding hang/prop bracket design session, then print + bench-test electronics, generate STLs
 
 ## Folder Structure
 ```
@@ -14,10 +14,13 @@ table-fan/
 ├── docs/
 │   └── DESIGN_OVERVIEW.md
 ├── models/
-│   ├── fan_housing.scad      ← main body
-│   └── faceplate.scad        ← removable front grille (M2×6 mm screws)
+│   ├── fan_housing.scad      ← main body (two-level electronics bay)
+│   ├── faceplate.scad        ← removable front grille (M2 screws + nuts)
+│   ├── battery_sled.scad     ← printed 4×1 18650 tray
+│   └── knob.scad             ← backup dial knob (aluminum knob ships with pot)
 └── electronics/
-    └── ELECTRONICS_BOM_AND_WIRING.md
+    ├── ELECTRONICS_BOM_AND_WIRING.md
+    └── wiring_diagram.svg    ← visual schematic
 ```
 
 ## How to Generate STLs

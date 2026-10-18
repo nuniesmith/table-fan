@@ -96,3 +96,5 @@ Run it after changing any dimension. `--self-test` breaks each check on purpose,
 4. Faceplates, front and rear: M2 × 6.
 5. Electronics on the bottom plate and the sled (electronics doc), then the plate: 4× M3 × 8 countersunk.
 6. Bail: an M4 × 12 and a nylon washer each side; tighten until it holds its angle.
+
+Truck vibration backs screws out of printed parts. Put a plastic-safe threadlocker (e.g. Vibra-TITE VC-3) on the fan bolts and the faceplate and bail screws. It still lets you adjust the bail.

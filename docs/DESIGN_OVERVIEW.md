@@ -61,6 +61,7 @@ About 140 × 177 × 100 mm (W × H × D), plus the knob and the rear pod. Coordi
 - M4 heat-set inserts × 2 + M4 × 12 × 2 + M4 nylon washers × 2 (bail)
 - M2 self-tapping into printed pilots: × 2 M2 × 8 (sled to plate), × 4 M2 × 6 (sled lid), × 2 M2 × 10 (OLED pod), × 4 M2 × 5 (OLED to its posts), × 4 M2 × 6 (Zero carrier)
 - 4 stick-on rubber feet, up to 12 mm across
+- Plastic-safe threadlocker (e.g. Vibra-TITE VC-3) for the fan bolts, faceplate and bail screws: truck vibration backs screws out
 - Check the insert kit's hole sizes against the pilots: M2 3.2 mm, M3 4.2 mm, M4 5.6 mm
 - Filament: **ASA, or PETG**. A parked summer cab reaches 60–70 °C, which sags PLA, and heat-set inserts creep in PETG near its limit.
 

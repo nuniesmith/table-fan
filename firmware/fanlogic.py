@@ -186,21 +186,27 @@ class Tach:
 
 
 def fan_duty(speed_pct, cut, min_duty=0):
-    """PWM duty in percent: off below 1% or while cut off, otherwise at least
-    `min_duty`."""
+    """PWM duty in percent: off below 1% or while cut off. Above that, the
+    dial's travel maps linearly onto `min_duty`..100%, so all of it changes
+    the speed. (It used to clamp at `min_duty`; a fan that runs at its
+    minimum speed below 20% duty, like the NF-F12 iPPC-3000, then ignored
+    the bottom fifth of the dial.)"""
     if cut or speed_pct < 1:
         return 0
-    return max(min_duty, min(100.0, speed_pct))
+    return min_duty + (100.0 - min_duty) * min(100.0, speed_pct) / 100.0
 
 
-def led_colour(screen_on, cut, charging, level=32):
+def led_colour(screen_on, cut, charging, level=32, swap_rg=False):
     """The status LED follows the screen: dark whenever the screen sleeps, so
     nothing lights the cab at night (it used to stay blue all night while
     charging, and red after a cutoff). Wake the screen to see the state."""
     if not screen_on:
         return (0, 0, 0)
     if cut:
-        return (level, 0, 0)
-    if charging:
-        return (0, 0, level)
-    return (0, level, 0)
+        c = (level, 0, 0)
+    elif charging:
+        c = (0, 0, level)
+    else:
+        c = (0, level, 0)
+    # some RP2040-Zero LEDs take RGB rather than WS2812's usual GRB
+    return (c[1], c[0], c[2]) if swap_rg else c

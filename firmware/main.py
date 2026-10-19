@@ -44,10 +44,14 @@ I2C_SCL_PIN   = 1
 
 PWM_FREQ_HZ   = 25000
 TACH_PPR      = 2          # tach pulses per revolution (standard)
-MIN_DUTY      = 0          # %  (raise to ~20 if your fan won't start low)
+MIN_DUTY      = 20         # %: the dial's travel maps onto MIN_DUTY..100%.
+                           # The NF-F12 iPPC-3000 runs at its minimum speed
+                           # below 20%; use 0 for a fan that slows further.
 SCREEN_TIMEOUT_S = 15
 OLED_CONTRAST = 0x40       # 0x00-0xFF; dimmer is kinder in a dark cab
 LED_LEVEL     = 32         # WS2812 brightness, 0-255
+LED_SWAP_RG   = False      # True if the LED shows red while the fan runs
+                           # normally (that board's LED takes RGB, not GRB)
 
 BATT_R1 = 100_000.0        # top of divider
 BATT_R2 = 22_000.0         # bottom of divider: 16.8 V -> 3.03 V. (24k put
@@ -68,7 +72,9 @@ CHARGER_ACTIVE_LOW = True  # flip to False if yours idles low. MEASURE the
 USE_WDT = True
 
 # ------------------------------- Setup -------------------------------------
-pwm = PWM(Pin(PWM_PIN), freq=PWM_FREQ_HZ, duty_u16=0)
+pwm = PWM(Pin(PWM_PIN))     # step by step: older MicroPython takes no
+pwm.freq(PWM_FREQ_HZ)       # keyword arguments in the PWM constructor
+pwm.duty_u16(0)
 
 tach_count = 0
 def _tach_irq(pin):
@@ -206,7 +212,7 @@ while True:
         oled_do(lambda o: draw(o, speed_pct, rpm, volts, batt.percent(), charging, cut))
 
     # --- LED: dark whenever the screen is ---
-    np[0] = fanlogic.led_colour(on, cut, charging, LED_LEVEL)
+    np[0] = fanlogic.led_colour(on, cut, charging, LED_LEVEL, LED_SWAP_RG)
     np.write()
 
     time.sleep_ms(100)

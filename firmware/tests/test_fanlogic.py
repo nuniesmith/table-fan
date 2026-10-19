@@ -181,13 +181,27 @@ class ScreenAndLedTests(unittest.TestCase):
         self.assertEqual(fanlogic.led_colour(True, False, True), (0, 0, 32))
         self.assertEqual(fanlogic.led_colour(True, False, False), (0, 32, 0))
 
+    def test_swapped_led_still_shows_the_right_colours(self):
+        self.assertEqual(fanlogic.led_colour(True, False, False, 32, swap_rg=True), (32, 0, 0))
+        self.assertEqual(fanlogic.led_colour(True, True, False, 32, swap_rg=True), (0, 32, 0))
+        self.assertEqual(fanlogic.led_colour(True, False, True, 32, swap_rg=True), (0, 0, 32))
+        self.assertEqual(fanlogic.led_colour(False, True, True, 32, swap_rg=True), (0, 0, 0))
+
 
 class FanAndTachTests(unittest.TestCase):
     def test_duty(self):
         self.assertEqual(fanlogic.fan_duty(0.5, False), 0)
         self.assertEqual(fanlogic.fan_duty(60, True), 0)
-        self.assertEqual(fanlogic.fan_duty(10, False, min_duty=20), 20)
         self.assertEqual(fanlogic.fan_duty(150, False), 100)
+        self.assertEqual(fanlogic.fan_duty(50, False), 50)
+
+    def test_the_whole_dial_changes_the_speed_above_min_duty(self):
+        duties = [fanlogic.fan_duty(p, False, min_duty=20) for p in range(1, 101)]
+        self.assertAlmostEqual(duties[0], 20.8)
+        self.assertAlmostEqual(duties[9], 28.0)         # 10% of the dial
+        self.assertEqual(duties[-1], 100)
+        self.assertTrue(all(b > a for a, b in zip(duties, duties[1:])))   # no dead zone
+        self.assertEqual(fanlogic.fan_duty(0.5, False, min_duty=20), 0)   # still off at the bottom
 
     def test_rpm_from_pulse_counts(self):
         tach = fanlogic.Tach(0, ppr=2)

@@ -46,7 +46,7 @@ vibration would walk the board loose and stress the USB-C.)
 | Other fixings | – | M2 self-tapping: sled 2× M2×8 + lid 4× M2×6, OLED pod 2× M2×10 + module 4× M2×5; 4 stick-on feet | See `docs/DESIGN_OVERVIEW.md` |
 | Wiring, heat-shrink | - | 18 AWG power, 26 AWG signal (on hand) | - |
 | 18650 slot charger | 1 | 2-slot standalone charger (bench) | Check/top-up cells before install – not part of the build |
-| Tactile button 6×6mm | 1 | Standard 6×6mm tactile switch (**to order** – not in the current parts order) | Screen on/off toggle on +X wall; wired to GP11 + GND |
+| Tactile button 6×6mm | 1 | 6×6 mm tactile switch, **8–9.5 mm tall** (**to order** – not in the current parts order) | Screen on/off toggle: pushed into a pocket in the +X wall from outside, legs through to the inside; wired to GP11 + GND. A shorter switch's stem won't reach out of the pocket |
 
 ## Pinout – Waveshare RP2040-Zero (from the board in the photo)
 Left edge (top→bottom): **5V, GND, 3V3, GP29, GP28, GP27, GP26, GP15 … GP8**.
@@ -155,7 +155,9 @@ multimeter ÷ screen. 100 nF from GP26 to GND filters the noise.
 pin; the "status" is their LED, and an LED node can sit at 5 V or more. GP13
 tolerates 3.3 V. Before connecting it:
 1. With GP13 unconnected, charge a real pack from USB and measure the status
-   pin to GND while charging, then again when full.
+   pin to GND while charging, again when full, **and with the USB unplugged**.
+   The unplugged reading matters most: it is the normal running state, and an
+   unpowered module can pull its pin low, which would read as "charging".
 2. If it ever exceeds 3.3 V, connect it through 10k with a clamp diode
    (1N4148, cathode to 3V3), or use an optocoupler across the LED.
 3. Set `CHARGER_ACTIVE_LOW` in `firmware/main.py` from what you measured.
@@ -230,17 +232,22 @@ with `view = "base_layout"` shows them from above.
   (X -67..17, Z 11..88): 4 cells side by side, axes front to back, lid screwed on.
 - **On the sled's lid**: the 4S BMS (46 × 60 footprint at X -64..-18) and the 12 V buck.
   Measure the BMS on arrival: up to about 50 × 75 fits the lid beside the buck.
-- **On the plate, +X side**: the charger module (X 19..44, Z 4..39) and the 5 V buck
-  (Z 42..64), on foam tape; the Zero carrier on 4 M2 bosses (X 25..50, Z 67..97),
-  its USB-C at the rear wall.
-- **+X wall**: dial pot (Z 24; knob recess cut from the outside), USB-C charge port
-  (Z 46), screen button (Z 62), all cut through to the inside.
+- **On the plate, +X side**, on foam tape:
+  - the 5 V buck (X 22..39, Z 4..26), under the head;
+  - the charger (X 18..43, Z 30..65), behind the head under the vent slots in the base's top, where the fan's intake draws air past it;
+  - the Zero carrier on 4 M2 bosses (X 25..50, Z 67..97), its USB-C at the rear wall.
+- **+X wall**:
+  - the dial pot (Z 24): a ring inside makes the wall 3 mm under the nut, and the knob recess is cut from the outside;
+  - the USB-C charge port (Z 46);
+  - the screen button (Z 66), in a pocket with a floor, so a press bears on plastic, not glue.
 - **Rear wall**: the Zero's USB-C cutout + strain-relief collar, and the **OLED pod**:
   a separate part on 2 screws, glass facing rear, which can be reprinted to fit the
   real module (`oled_*` parameters).
-- **Fan cable**: down through the slot in the head's floor and the base's roof
-  (X 14..26), to the header on the carrier.
-- Bottom plate: 4× M3 countersunk into inserts; vent slots under the charger.
+- **Fan cable**:
+  - from whichever bottom corner it leaves the fan, along the groove across the cavity floor (there is no room beside the fan);
+  - down through the slot in the head's floor and the base's roof (X 14..26);
+  - to the header on the carrier.
+- Bottom plate: 4× M3 countersunk into inserts, vent slots under the charger, and 3 zip-tie bridges for the wiring.
 
 ### Fan mounting
 4× M3 × 30 from the front, through the fan's corner holes (105 mm pattern), into M3
@@ -264,10 +271,22 @@ rear are separate parts and don't hold the fan.
 - Use stranded wire, tie it down near every joint, and put a dab of glue on each
   joint at the Zero's castellated pads: 26 AWG joints fatigue first in a truck.
 - Solder the OLED's wires; a pushed-on header works loose.
+- A strip of 1 mm EVA foam under the sled's lid and at each end of the pack stops it rattling.
+- Dial pot: snap off its small locating tab (or drill a hole for it), so its face sits flat on the wall's ring, and tighten the nut firmly.
+
+### First power-up, in this order
+1. Set both MP1584s on a bench supply, with nothing on their outputs: 12.0 V and 5.0 V.
+2. Pack:
+   - check that every cell reads 3.0–4.2 V, all within 0.02 V of each other;
+   - connect the BMS's **B− first, then B1, B2, B3, B+ in order**, and disconnect in reverse: a wrong order can kill its balance chip;
+   - the BMS output should read the pack voltage.
+3. Fuse in. Dial OFF: connect the switch, VCC bus and bucks. Switch on with the fan and Zero unplugged, and measure 12 V and 5 V.
+4. Zero: bench-test it on USB first (`firmware/README.md`), then connect it to the 5 V buck with the USB unplugged (or through the Schottky, see "Protection and sensing").
+5. Fan last. Then calibrate `BATT_CAL` against a multimeter.
 
 ## Verify on arrival (electrical)
 - **Charger module**: set to 4S; its input spec (5 V only, or USB PD); its
-  status pin's voltage while charging and when full.
+  status pin's voltage while charging, when full and unplugged.
 - **USB-C socket**: it brings out CC1/CC2, and has 5.1k pull-downs (fit them if not).
 - **BMS**: the balance version; common-port or a separate C− charge pad.
 - **Cells**: all four within 0.02 V of each other; whether they came with tabs.

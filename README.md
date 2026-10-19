@@ -9,6 +9,7 @@
   - Dial, charge port and screen button are on the base's left (+X) wall; the OLED pod and the Zero's USB-C are on its back.
   - A U-bail on the head carries it or hangs it.
   - Every part renders manifold, and `tools/check_geometry.py` checks the fits. Nothing has been printed yet.
+  - Review 2 (2026-10-19) readied it for printing: the fan cable has a path, the charger is vented, the button and pot mounts are stronger, the fit allows for ASA's shrink, and there are test prints. **Start with [docs/PRINTING.md](docs/PRINTING.md)**: what to print first, settings, and what to order now.
 - **Electronics**: Fully documented BOM, pinout, wiring diagram (SVG schematic). Parts ordered Oct 17, 2026.
 - **Firmware**: MicroPython in `firmware/`.
 - **Next**: measure the parts as they arrive ("Verify on arrival" in the electronics doc), print, bench-test.
@@ -28,7 +29,8 @@ In the base: the sled's lid (brown) carries the BMS (green) and the 12 V buck (b
 table-fan/
 ├── README.md
 ├── docs/
-│   └── DESIGN_OVERVIEW.md
+│   ├── DESIGN_OVERVIEW.md
+│   └── PRINTING.md           ← print order, settings, inserts, what to order
 ├── models/
 │   ├── fan_housing.scad      ← head, base, bottom plate, OLED pod
 │   ├── battery_sled.scad     ← 4×18650 sled + lid (the BMS sits on the lid)
@@ -36,6 +38,7 @@ table-fan/
 │   ├── faceplate.scad        ← front and rear grille (print two)
 │   ├── knob.scad             ← backup dial knob (aluminum knob ships with pot)
 │   ├── assembly.scad         ← everything assembled, for looking at
+│   ├── test_prints.scad      ← quick fit tests: inserts, fan, side wall, sled end
 │   └── checks.scad           ← fit checks, run by tools/check_geometry.py
 ├── tools/
 │   └── check_geometry.py
@@ -51,7 +54,7 @@ table-fan/
 
    | Part | File | Variable | On the bed |
    |------|------|----------|------------|
-   | Head | `fan_housing.scad` | `part = "head"` | front face down |
+   | Head | `fan_housing.scad` | `part = "head"` | rear face down |
    | Base | `fan_housing.scad` | `part = "base"` | upside down |
    | Bottom plate | `fan_housing.scad` | `part = "plate"` | flat |
    | OLED pod | `fan_housing.scad` | `part = "pod"` | window down |
@@ -59,26 +62,30 @@ table-fan/
    | Bail | `bail.scad` | `bail_part = "print"` | flat |
    | Faceplate (×2) | `faceplate.scad` | – | flat |
    | Knob (backup) | `knob.scad` | – | flat |
+   | Test prints | `test_prints.scad` | `test = "inserts"`, `"fan_fit"`, `"side_wall"`, `"sled_end"` | as rendered |
 
    Or run `python3 tools/check_geometry.py --stl stl`: it checks everything and writes every STL to `stl/`.
-3. Slice in your preferred slicer. **ASA, or PETG**: a parked summer cab reaches 60–70 °C, which sags PLA.
+3. Slice in your preferred slicer. **ASA, or PETG**: a parked summer cab reaches 60–70 °C, which sags PLA. Settings and the print order are in [docs/PRINTING.md](docs/PRINTING.md).
 
 ## Checking the geometry
-`python3 tools/check_geometry.py` renders every part and 16 fit checks with OpenSCAD and prints PASS/FAIL. It takes about a minute on 16 cores. What it checks:
+`python3 tools/check_geometry.py` renders every part and 17 fit checks with OpenSCAD and prints PASS/FAIL. It takes about a minute on 16 cores. What it checks:
 - the fan's intake is clear;
 - the fan fits and bears on its ledges;
 - the cells fit the sled, and the sled, boards, dial, charge port and button fit the base without touching each other;
-- the openings go through;
+- the openings go through: charge port, button, Zero plug, vents, and the fan cable's slot and floor groove;
+- a press on the button bears on a floor, not on glue;
 - the bail swings from up to rest without hitting anything;
 - there is material round every insert pilot;
-- every part is manifold.
+- every part is manifold, read from its exported mesh (so any OpenSCAD version gives the same answer).
 
-Run it after changing any dimension. `--self-test` breaks each check on purpose, to prove each one can fail.
+Run it after changing any dimension. `--self-test` breaks each check on purpose, to prove each one can fail. `--overhangs` lists every bridge and overhang each part will print, and estimates its filament.
 
 ## Key Design Features
 - Fits a standard 120 × 120 × 25 mm fan: four M3 bolts through its corner holes into nuts on ledges behind it
 - Grilles front and rear (the same part, print two), each on 4× M2 screws into heat-set inserts
 - Base: the 4S1P pack boxed in a sled with the BMS on its lid, the charger, two MP1584 bucks and the Zero carrier. Take the bottom plate off and everything is in reach
+- Vent slots over the charger and the 12 V buck, behind the head, where the fan's intake draws air past them; zip-tie bridges on the bottom plate
+- A groove across the fan cavity's floor leads the fan's cable from its corner to the slot into the base
 - Dial (speed + hard power), USB-C charge port and screen button on the left (+X) side
 - OLED pod and the Zero's USB-C (programming port) on the back
 - U-bail: carry handle or wall-hook hanger; swings back onto the base when not in use
@@ -90,11 +97,11 @@ Run it after changing any dimension. `--self-test` breaks each check on purpose,
    - base: M3 ×8 (4 in its top surface, 4 in its corner bosses underneath).
 2. Head onto the base: 4× M3 × 16 countersunk, from inside the fan cavity down into the base.
 3. Fan:
-   - Feed its cable down through the slot in the floor.
+   - Turn it so its cable leaves at a bottom corner. Feed the plug down through the slot in the floor and lay the cable in the floor groove.
    - Put it in with the airflow arrow pointing out of the front.
    - Fix it with 4× M3 × 30 from the front through its corner holes, with the nuts in the pockets on the ledges behind.
 4. Faceplates, front and rear: M2 × 6.
 5. Electronics on the bottom plate and the sled (electronics doc), then the plate: 4× M3 × 8 countersunk.
-6. Bail: an M4 × 12 and a nylon washer each side; tighten until it holds its angle.
+6. Bail: an M4 × 12 each side, with a steel washer under its head and a nylon washer between the arm and the head. Tighten until it holds its angle.
 
 Truck vibration backs screws out of printed parts. Put a plastic-safe threadlocker (e.g. Vibra-TITE VC-3) on the fan bolts and the faceplate and bail screws. It still lets you adjust the bail.

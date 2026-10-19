@@ -1,2 +1,3 @@
 # STLs exported by tools/check_geometry.py --stl
 stl/
+__pycache__/

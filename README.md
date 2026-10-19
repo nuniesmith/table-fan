@@ -64,7 +64,7 @@ table-fan/
    | Knob (backup) | `knob.scad` | – | flat |
    | Test prints | `test_prints.scad` | `test = "inserts"`, `"fan_fit"`, `"side_wall"`, `"sled_end"` | as rendered |
 
-   Or run `python3 tools/check_geometry.py --stl stl`: it checks everything and writes every STL to `stl/`.
+   Or run `python3 tools/check_geometry.py --stl stl`: it checks everything and writes every STL, test prints included, to `stl/`.
 3. Slice in your preferred slicer. **ASA, or PETG**: a parked summer cab reaches 60–70 °C, which sags PLA. Settings and the print order are in [docs/PRINTING.md](docs/PRINTING.md).
 
 ## Checking the geometry

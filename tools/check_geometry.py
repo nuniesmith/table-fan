@@ -86,6 +86,10 @@ PARTS = [
     ("bail", "bail.scad", "bail_part", "print"),
     ("faceplate", "faceplate.scad", None, None),
     ("knob", "knob.scad", None, None),
+    ("test_inserts", "test_prints.scad", "test", "inserts"),
+    ("test_fan_fit", "test_prints.scad", "test", "fan_fit"),
+    ("test_side_wall", "test_prints.scad", "test", "side_wall"),
+    ("test_sled_end", "test_prints.scad", "test", "sled_end"),
 ]
 
 EMPTY_TOL = 0.05    # mm^3

@@ -2,10 +2,11 @@
 
 Everything except the OLED pod can be printed before the parts arrive. The pod
 waits for the module, so its hole spacing can be measured first. Run
-`python3 tools/check_geometry.py` after changing any dimension.
+`python3 tools/check_geometry.py` after changing any dimension. This build is
+**PLA**; once the parts are printed, [BUILD.md](BUILD.md) takes it from there.
 
 ## Print order
-1. **Test prints** (`models/test_prints.scad`, set `test`). Use the filament you'll print the real parts in; ASA and PETG shrink differently.
+1. **Test prints** (`models/test_prints.scad`, set `test`). Print them in the same PLA as the real parts.
 
    | Test | Checks | Then |
    |------|--------|------|
@@ -20,14 +21,7 @@ waits for the module, so its hole spacing can be measured first. Run
 
 The knob is a backup only: the aluminium knob ships with the pot.
 
-**Filament**: about 410 g of ASA for the whole fan, plus about 80 g of test prints. One 1 kg spool covers it with room for a reprint. Estimated from the parts' volumes at 4 perimeters and 25 % infill, so expect your slicer to differ by up to ~20 %.
-
-| Part | ~g | Part | ~g |
-|------|----|------|----|
-| Head | 120 | Faceplate (each) | 42 |
-| Base | 85 | Sled + lid | 47 |
-| Bottom plate | 44 | Bail | 24 |
-| OLED pod | 6 | Test prints (all four) | 80 |
+**Filament**: about 410 g of PLA for the whole fan plus about 65 g of test prints, as sliced in the plate table below. One 1 kg spool covers it with room for a reprint.
 
 ## Ender-3 Neo, in PLA
 Seven plates, sliced from Creality's own Ender-3 Neo + Generic PLA profiles
@@ -54,13 +48,12 @@ change the dimension and re-slice:
 Before the first plate:
 - **Set the Z offset** on the printer, so the first layer of plate 01 is right. Every print re-probes the bed, which adds about 2 minutes.
 - PLA: 205 °C for the first layer, 200 °C after (what your PLA prints at); bed 60 °C; part fan at 100 % from layer 2. Overhanging edges print with bridge settings ("detect bridging perimeters").
-- **PLA softens at about 55–60 °C**, and a parked summer cab gets hotter. PLA is fine for fitting everything and a first build; before trusting it in a hot truck, reprint at least the head, base and bail in PETG (the Neo prints it at 230–240 °C on a 70–80 °C bed).
-- Heat-set inserts go into PLA at a lower iron temperature: about 180–200 °C.
+- **PLA softens at about 55–60 °C**, and a parked summer cab gets hotter: don't leave the finished fan in a closed cab in the sun ([BUILD.md](BUILD.md), "Looking after it").
 
 To slice by hand instead, import `slicing/ender3-neo-pla.ini` in PrusaSlicer (File › Import › Import Config) and load the STLs from `python3 tools/check_geometry.py --stl stl`.
 
-### The final build, in PETG
-Once the PLA build has proved the fits, reprint for the truck in PETG. It's the same seven plates and about the same times, using about 490 g:
+### If you ever reprint in PETG
+PLA is the build. If the fan ever needs to take more heat, the same files print in PETG: the same seven plates and about the same times, using about 490 g:
 
     python3 tools/slice.py --prusaslicer /path/to/prusa-slicer --material petg   # writes gcode/petg/
 
@@ -71,14 +64,14 @@ Once the PLA build has proved the fits, reprint for the truck in PETG. It's the 
 - Reprint `01_test_prints` in PETG first: inserts sit differently in it.
 
 ## Settings
-- **Material: ASA, or PETG.** A parked summer cab reaches 60–70 °C, which sags PLA. ASA needs an enclosure and shrinks about 0.6 %; turn on your slicer's shrinkage compensation if it has one. The fan cavity already allows for the shrink.
+- **Material: PLA.** It's what's on hand, and it prints these parts easily. It softens at about 55–60 °C, so the finished fan stays out of a hot parked cab. PETG or ASA would take more heat with the same files, and the fan cavity already allows for ASA's shrink.
 - 0.2 mm layers; **4 perimeters** (the insert bosses and pivot walls need solid plastic round them); 5 top and bottom layers; 25 % gyroid infill.
 - **No supports on any part.** What remains are short bridges (the base's openings, 13–22 mm; the head's cable slot, 12 mm) and horizontal holes: default bridge settings. `python3 tools/check_geometry.py --overhangs` lists every one, part by part.
-- Brim of about 5 mm on the base and the bottom plate in ASA, whose corners lift.
+- No brims needed in PLA, apart from the test plate's standing wall piece, which already has one.
 - Orientations are in the README table: each part renders already in its print orientation.
 
 ## Heat-set inserts
-Press them in straight with a soldering iron (about 230 °C for PETG, 250 °C for ASA) until flush, and let them cool before loading them.
+Press them in straight with a soldering iron (about 180–200 °C for PLA) until flush, and let them cool before loading them.
 
 | Where | Inserts |
 |-------|---------|
@@ -97,6 +90,7 @@ Not in the Oct 17 order, or decided since. Skip what's already in your kits.
   - M3 × 8 countersunk ×4 (bottom plate);
   - M4 × 12 ×2, plus 2 nylon and 2 steel washers (bail);
   - M2 self-tapping screws, 5–10 mm, about 16.
+- **Optional**: JST-XH 2.54 mm plugs (2-, 3- and 4-pin) for the dial, button and OLED leads, so the bottom plate can come right out (BUILD.md, the harness).
 - **Screen button**: 6 × 6 mm tactile switch, **8–9.5 mm tall**. It sits in a pocket in the wall, so a short one's stem won't reach out of it.
 - **Electronics**, from the electronics doc:
   - 2 A fuse + inline holder (or a 1.5 A PTC);

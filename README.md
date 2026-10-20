@@ -9,7 +9,7 @@
   - Dial, charge port and screen button are on the base's left (+X) wall; the OLED pod and the Zero's USB-C are on its back.
   - A U-bail on the head carries it or hangs it.
   - Every part renders manifold, and `tools/check_geometry.py` checks the fits. Nothing has been printed yet.
-  - Review 2 (2026-10-19) readied it for printing: the fan cable has a path, the charger is vented, the button and pot mounts are stronger, the fit allows for ASA's shrink, and there are test prints. **Start with [docs/PRINTING.md](docs/PRINTING.md)**: what to print first, settings, and what to order now.
+  - Review 2 (2026-10-19) readied it for printing: the fan cable has a path, the charger is vented, the button and pot mounts are stronger, the fit allows for ASA's shrink, and there are test prints. **Start with [docs/PRINTING.md](docs/PRINTING.md)**: what to print first, settings, and what to order now. Then [docs/BUILD.md](docs/BUILD.md) takes it from printed parts to a running fan.
 - **Electronics**: Fully documented BOM, pinout, wiring diagram (SVG schematic). Parts ordered Oct 17, 2026.
 - **Firmware**: MicroPython in `firmware/`.
 - **Next**: measure the parts as they arrive ("Verify on arrival" in the electronics doc), print, bench-test.
@@ -30,7 +30,8 @@ table-fan/
 ├── README.md
 ├── docs/
 │   ├── DESIGN_OVERVIEW.md
-│   └── PRINTING.md           ← print order, settings, inserts, what to order
+│   ├── PRINTING.md           ← print order, settings, inserts, what to order
+│   └── BUILD.md              ← assembly, wiring cut list, first power-up, calibration
 ├── models/
 │   ├── fan_housing.scad      ← head, base, bottom plate, OLED pod
 │   ├── battery_sled.scad     ← 4×18650 sled + lid (the BMS sits on the lid)
@@ -70,7 +71,7 @@ table-fan/
 
    Or run `python3 tools/check_geometry.py --stl stl`: it checks everything and writes every STL, test prints included, to `stl/`.
    For a Creality Ender-3 Neo, `python3 tools/slice.py --prusaslicer /path/to/prusa-slicer` writes ready G-code for all seven plates in PLA (`--material petg` for PETG); see [docs/PRINTING.md](docs/PRINTING.md).
-3. Slice in your preferred slicer. **ASA, or PETG**: a parked summer cab reaches 60–70 °C, which sags PLA. Settings and the print order are in [docs/PRINTING.md](docs/PRINTING.md).
+3. Slice in your preferred slicer. This build is **PLA**. It softens at about 55–60 °C, so keep the finished fan out of a hot parked cab; PETG or ASA would take the heat with the same files. Settings and the print order are in [docs/PRINTING.md](docs/PRINTING.md).
 
 ## Checking the geometry
 `python3 tools/check_geometry.py` renders every part and 17 fit checks with OpenSCAD and prints PASS/FAIL. It takes about a minute on 16 cores. What it checks:

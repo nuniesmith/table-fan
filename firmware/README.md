@@ -5,9 +5,10 @@ and `ssd1306.py` to the Zero via Thonny (it runs on boot).
 
 ## What it does
 
-- **Dial → fan speed**: 25 kHz PWM on GP15, 0–100%. The speed settles
-  exactly where the dial points. Full-CCW clicks the hardware switch and
-  cuts power (the Zero just turns off).
+- **Dial → fan speed**: 25 kHz PWM on GP15. The dial's whole travel maps
+  onto `MIN_DUTY`–100% (20–100%: the NF-F12 iPPC-3000 runs at its minimum
+  speed below 20%), and the speed settles exactly where the dial points.
+  Full-CCW clicks the hardware switch and cuts power (the Zero just turns off).
 - **Tach → RPM**: counts GP14 pulses (2/rev), 1 s window.
 - **Battery**: GP26 via a 100k/22k divider on the **switched** bus →
   voltage, % (0% = the cutoff voltage), and the low-voltage cutoff: below
@@ -57,7 +58,8 @@ and `ssd1306.py` to the Zero via Thonny (it runs on boot).
    the firmware enables it).
 3. Pot (any 10k): ends → 3V3/GND, wiper → GP27.
 4. Power the Zero via USB. Turn the pot — the fan should follow and settle
-   on the dial.
+   on the dial. The LED should be **green**. If it is red, that board's LED
+   takes RGB order: set `LED_SWAP_RG = True`.
 5. If you have the OLED, wire SDA→GP0, SCL→GP1, VCC→3V3, GND→GND.
    **Check the module's silkscreen — GND/VCC pin order is random.**
 6. Battery divider: don't connect the 4S pack until the BMS is wired.
@@ -65,14 +67,18 @@ and `ssd1306.py` to the Zero via Thonny (it runs on boot).
 7. Calibrate once: compare the screen's voltage with a multimeter on the
    pack, and set `BATT_CAL` = multimeter / screen.
 8. Charger status: before wiring GP13, measure the module's status pin to
-   ground while charging and when full. If it ever exceeds 3.3 V, wire it
-   through 10k plus a clamp diode to 3V3, or an optocoupler. Then set
-   `CHARGER_ACTIVE_LOW` from what you measured.
+   ground while charging, when full, **and with the USB unplugged**. If it
+   ever exceeds 3.3 V, wire it through 10k plus a clamp diode to 3V3, or an
+   optocoupler. Set `CHARGER_ACTIVE_LOW` from what you measured, then check
+   that the screen does not show CHARGING with the USB unplugged: an
+   unpowered module can pull its pin low.
 
 ## Tuning
 
-All tunables are at the top of `main.py`: `MIN_DUTY` (raise if the fan
-won't start at low speed), `SCREEN_TIMEOUT_S`, `OLED_CONTRAST`, `LED_LEVEL`,
+All tunables are at the top of `main.py`: `MIN_DUTY` (the duty at the
+bottom of the dial: 20 for the iPPC-3000, 0 for a fan that slows further,
+higher if a fan won't start), `SCREEN_TIMEOUT_S`, `OLED_CONTRAST`, `LED_LEVEL`,
+`LED_SWAP_RG`,
 `BATT_CAL`, `BATT_CUTOFF_V` / `BATT_RESUME_V` / `BATT_HOLD_MS`,
 `CHARGER_ACTIVE_LOW`. Dial smoothing and the wake threshold are arguments
 of `fanlogic.Dial` (`smooth`, `wake_counts`).

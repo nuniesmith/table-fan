@@ -59,6 +59,17 @@ Before the first plate:
 
 To slice by hand instead, import `slicing/ender3-neo-pla.ini` in PrusaSlicer (File › Import › Import Config) and load the STLs from `python3 tools/check_geometry.py --stl stl`.
 
+### The final build, in PETG
+Once the PLA build has proved the fits, reprint for the truck in PETG. It's the same seven plates and about the same times, using about 490 g:
+
+    python3 tools/slice.py --prusaslicer /path/to/prusa-slicer --material petg   # writes gcode/petg/
+
+- **235 °C**, not Creality's 240: the Neo's hotend is PTFE-lined to the nozzle, and PTFE starts to break down above about 240 °C.
+- Bed 70 °C. Part fan 20–50 %, off for the first 3 layers, full for bridges.
+- PETG can bond to a PEI or glass bed hard enough to tear the surface: wipe on a thin layer of glue stick as a release.
+- PETG picks up moisture: if it pops or strings badly, dry the spool (about 65 °C for 4 h).
+- Reprint `01_test_prints` in PETG first: inserts sit differently in it.
+
 ## Settings
 - **Material: ASA, or PETG.** A parked summer cab reaches 60–70 °C, which sags PLA. ASA needs an enclosure and shrinks about 0.6 %; turn on your slicer's shrinkage compensation if it has one. The fan cavity already allows for the shrink.
 - 0.2 mm layers; **4 perimeters** (the insert bosses and pivot walls need solid plastic round them); 5 top and bottom layers; 25 % gyroid infill.

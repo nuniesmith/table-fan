@@ -13,7 +13,9 @@ and `ssd1306.py` to the Zero via Thonny (it runs on boot).
 - **Battery**: GP26 via a 100k/22k divider on the **switched** bus →
   voltage, % (0% = the cutoff voltage), and the low-voltage cutoff: below
   13.2 V for 5 s the fan stops, "LOW BATTERY!" shows, and it stays off
-  until the pack is charged above 14.0 V or the dial is clicked off.
+  until the pack is charged above 14.0 V or the dial is clicked off. With
+  nothing on the divider (USB power, on the bench) it shows "no pack" and
+  doesn't cut off.
 - **OLED** (GP0/GP1): speed %, RPM, battery % + volts, CHARGING indicator.
   Optional: if it is missing or glitches, the fan keeps running and the
   screen is retried every 30 s.
@@ -58,7 +60,10 @@ and `ssd1306.py` to the Zero via Thonny (it runs on boot).
    the firmware enables it).
 3. Pot (any 10k): ends → 3V3/GND, wiper → GP27.
 4. Power the Zero via USB. Turn the pot — the fan should follow and settle
-   on the dial. The LED should be **green**. If it is red, that board's LED
+   on the dial. With nothing on the battery divider, the firmware sees "no
+   pack" and skips the low-voltage cutoff, so the fan keeps running. Thonny's
+   shell prints a status line every second (dial, duty, RPM, battery), which
+   is the readout until the OLED arrives. The LED should be **green**. If it is red, that board's LED
    takes RGB order: set `LED_SWAP_RG = True`.
 5. If you have the OLED, wire SDA→GP0, SCL→GP1, VCC→3V3, GND→GND.
    **Check the module's silkscreen — GND/VCC pin order is random.**
@@ -78,7 +83,7 @@ and `ssd1306.py` to the Zero via Thonny (it runs on boot).
 All tunables are at the top of `main.py`: `MIN_DUTY` (the duty at the
 bottom of the dial: 20 for the iPPC-3000, 0 for a fan that slows further,
 higher if a fan won't start), `SCREEN_TIMEOUT_S`, `OLED_CONTRAST`, `LED_LEVEL`,
-`LED_SWAP_RG`,
+`LED_SWAP_RG`, `SERIAL_STATUS_S`,
 `BATT_CAL`, `BATT_CUTOFF_V` / `BATT_RESUME_V` / `BATT_HOLD_MS`,
 `CHARGER_ACTIVE_LOW`. Dial smoothing and the wake threshold are arguments
 of `fanlogic.Dial` (`smooth`, `wake_counts`).

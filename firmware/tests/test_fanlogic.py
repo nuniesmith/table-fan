@@ -111,6 +111,26 @@ class BatteryTests(unittest.TestCase):
             t += 100
         self.assertLessEqual(changes, 1)
 
+    def test_no_pack_on_the_bench_never_cuts(self):
+        """USB power with nothing on the divider: the fan must keep running."""
+        batt = fanlogic.Battery()
+        self.feed(batt, 0.02, 0, 60)
+        self.assertFalse(batt.cut)
+        self.assertFalse(batt.present())
+        self.assertEqual(batt.percent(), 0)
+
+    def test_a_pack_connected_after_usb_power_does_not_cut(self):
+        batt = fanlogic.Battery()
+        t = self.feed(batt, 0.0, 0, 3)
+        self.feed(batt, 15.2, t, 10)          # the smoothed reading climbs through 5..13.2 V
+        self.assertFalse(batt.cut)
+        self.assertTrue(batt.present())
+
+    def test_a_flat_pack_still_cuts(self):
+        batt = fanlogic.Battery()
+        self.feed(batt, 12.0, 0, 6)
+        self.assertTrue(batt.cut)
+
     def test_percent_is_zero_at_cutoff_and_full_at_16_8(self):
         batt = fanlogic.Battery()
         batt.update(13.2, 0)

@@ -70,6 +70,7 @@ CHARGER_ACTIVE_LOW = True  # flip to False if yours idles low. MEASURE the
                            # tolerates 3.3 V (electronics doc, "Charger STAT").
 
 USE_WDT = True
+SERIAL_STATUS_S = 1        # a status line on USB serial (Thonny's shell) this often, in s; 0 = off
 
 # ------------------------------- Setup -------------------------------------
 pwm = PWM(Pin(PWM_PIN))     # step by step: older MicroPython takes no
@@ -134,7 +135,10 @@ def draw(o, speed_pct, rpm, volts, bpct, charging, cut):
     o.text("TABLE FAN", 0, 0, 1)
     o.text("SPD {:3d}%".format(int(speed_pct)), 0, 16, 1)
     o.text("RPM {:4d}".format(int(rpm)), 0, 28, 1)
-    o.text("BAT {:2d}% {:.1f}V".format(bpct, volts), 0, 40, 1)
+    if batt.present():
+        o.text("BAT {:2d}% {:.1f}V".format(bpct, volts), 0, 40, 1)
+    else:
+        o.text("BAT  no pack", 0, 40, 1)
     if cut:
         o.text("LOW BATTERY!", 0, 52, 1)
     elif charging:
@@ -167,6 +171,7 @@ btn = fanlogic.Button()
 tach = fanlogic.Tach(now, TACH_PPR, diff=time.ticks_diff)
 last_charging = is_charging()
 screen_shown = None        # power state last sent to the OLED
+next_status = now
 
 while True:
     now = time.ticks_ms()
@@ -198,7 +203,8 @@ while True:
     rpm = tach.update(count, now)
 
     # --- drive fan ---
-    pwm.duty_u16(int(fanlogic.fan_duty(speed_pct, cut, MIN_DUTY) / 100 * 65535))
+    duty = fanlogic.fan_duty(speed_pct, cut, MIN_DUTY)
+    pwm.duty_u16(int(duty / 100 * 65535))
 
     # --- screen ---
     on = screen.update(now)
@@ -214,5 +220,13 @@ while True:
     # --- LED: dark whenever the screen is ---
     np[0] = fanlogic.led_colour(on, cut, charging, LED_LEVEL, LED_SWAP_RG)
     np.write()
+
+    # --- status line on USB serial: the bench test's readout before the OLED ---
+    if SERIAL_STATUS_S and time.ticks_diff(now, next_status) >= 0:
+        next_status = time.ticks_add(now, SERIAL_STATUS_S * 1000)
+        batt_txt = "{:5.2f} V {:3d}%".format(volts, batt.percent()) if batt.present() else "no pack"
+        print("dial {:3.0f}%  duty {:3.0f}%  rpm {:4.0f}  batt {}{}{}{}".format(
+            speed_pct, duty, rpm, batt_txt, "  CUT" if cut else "",
+            "  charging" if charging else "", "  (no OLED)" if oled is None else ""))
 
     time.sleep_ms(100)

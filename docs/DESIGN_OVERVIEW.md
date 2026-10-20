@@ -68,7 +68,7 @@ About 140 × 177 × 100 mm (W × H × D), plus the knob and the rear pod. Coordi
 - 4 stick-on rubber feet, up to 12 mm across; 1 mm EVA foam tape; 2.5–3 mm zip ties (3 bridges on the bottom plate)
 - Plastic-safe threadlocker (e.g. Vibra-TITE VC-3) for the fan bolts, faceplate and bail screws: truck vibration backs screws out
 - Check the insert kit's hole sizes against the pilots: M2 3.2 mm, M3 4.2 mm, M4 5.6 mm
-- Filament: **ASA, or PETG**. A parked summer cab reaches 60–70 °C, which sags PLA, and heat-set inserts creep in PETG near its limit.
+- Filament: **PLA** for this build. It softens at about 55–60 °C, so the fan stays out of a hot parked cab. PETG or ASA would take more heat with the same files.
 
 ## Next Steps
 1. Test prints first (`models/test_prints.scad`, see `docs/PRINTING.md`): inserts, fan fit, sled end; the side wall when the pot, socket and button arrive

@@ -33,8 +33,8 @@ CONFIGS = {"pla": ROOT / "slicing" / "ender3-neo-pla.ini", "petg": ROOT / "slici
 DRAFT = ["--layer-height", "0.28", "--perimeters", "2", "--top-solid-layers", "3",
          "--bottom-solid-layers", "3", "--fill-density", "15%"]
 
-# (G-code name, parts on the plate, extra PrusaSlicer options). The OLED pod
-# waits for the module to be measured; the knob is a backup only.
+# (G-code name, parts on the plate, extra PrusaSlicer options). The knob is a
+# backup only, so it has no plate.
 PLATES = [
     ("01_test_prints", ["test_inserts", "test_sled_end", "test_side_wall"], ["--brim-width", "5"]),   # the wall piece stands tall
     ("02_test_fan_fit", ["test_fan_fit"], DRAFT),
@@ -43,6 +43,7 @@ PLATES = [
     ("05_bail_and_sled_lid", ["bail", "sled_lid"], []),
     ("06_bottom_plate_and_battery_sled", ["bottom_plate", "battery_sled"], []),
     ("07_base", ["base"], []),
+    ("08_oled_pod", ["oled_pod"], []),     # check the module's hole spacing first
 ]
 
 

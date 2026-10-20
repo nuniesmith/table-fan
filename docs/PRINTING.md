@@ -37,10 +37,10 @@ them in number order:
 
 | # | Plate | Time | PLA |
 |---|-------|------|-----|
-| 01 | Test prints: inserts, sled end, side wall (with a brim: the wall piece stands up) | 4 h 08 | 33 g |
+| 01 | Test prints: inserts, sled end, side wall (with a brim: the wall piece stands up) | 4 h 09 | 33 g |
 | 02 | Test: fan fit, at draft settings (0.28 mm, 2 walls); it only checks fit | 2 h 44 | 32 g |
 | 03 | Head | 12 h 26 | 122 g |
-| 04 | Faceplate: **print twice**, front and rear | 5 h 29 each | 43 g each |
+| 04 | Faceplate: **print twice**, front and rear | 5 h 27 each | 43 g each |
 | 05 | Bail + sled lid | 3 h 17 | 34 g |
 | 06 | Bottom plate + battery sled | 8 h 24 | 82 g |
 | 07 | Base | 9 h 20 | 90 g |
@@ -53,7 +53,7 @@ change the dimension and re-slice:
 
 Before the first plate:
 - **Set the Z offset** on the printer, so the first layer of plate 01 is right. Every print re-probes the bed, which adds about 2 minutes.
-- PLA: 210 °C for the first layer, 205 °C after; bed 60 °C; part fan at 100 % from layer 2.
+- PLA: 205 °C for the first layer, 200 °C after (what your PLA prints at); bed 60 °C; part fan at 100 % from layer 2. Overhanging edges print with bridge settings ("detect bridging perimeters").
 - **PLA softens at about 55–60 °C**, and a parked summer cab gets hotter. PLA is fine for fitting everything and a first build; before trusting it in a hot truck, reprint at least the head, base and bail in PETG (the Neo prints it at 230–240 °C on a 70–80 °C bed).
 - Heat-set inserts go into PLA at a lower iron temperature: about 180–200 °C.
 

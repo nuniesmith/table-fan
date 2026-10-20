@@ -29,6 +29,36 @@ The knob is a backup only: the aluminium knob ships with the pot.
 | Bottom plate | 44 | Bail | 24 |
 | OLED pod | 6 | Test prints (all four) | 80 |
 
+## Ender-3 Neo, in PLA
+Seven plates, sliced from Creality's own Ender-3 Neo + Generic PLA profiles
+(`slicing/ender3-neo-pla.ini`, below). Every one fits the 220 × 220 bed, needs
+no supports, and starts by homing and probing the bed (`G28`, `G29`). Print
+them in number order:
+
+| # | Plate | Time | PLA |
+|---|-------|------|-----|
+| 01 | Test prints: inserts, sled end, side wall (with a brim: the wall piece stands up) | 4 h 08 | 33 g |
+| 02 | Test: fan fit, at draft settings (0.28 mm, 2 walls); it only checks fit | 2 h 44 | 32 g |
+| 03 | Head | 12 h 26 | 122 g |
+| 04 | Faceplate: **print twice**, front and rear | 5 h 29 each | 43 g each |
+| 05 | Bail + sled lid | 3 h 17 | 34 g |
+| 06 | Bottom plate + battery sled | 8 h 24 | 82 g |
+| 07 | Base | 9 h 20 | 90 g |
+
+About 51 hours and 480 g of PLA in all. Print 01 and 02 first, and check
+them before going on (see "Print order" above). If a test shows a fit is off,
+change the dimension and re-slice:
+
+    python3 tools/slice.py --prusaslicer /path/to/prusa-slicer   # writes gcode/
+
+Before the first plate:
+- **Set the Z offset** on the printer, so the first layer of plate 01 is right. Every print re-probes the bed, which adds about 2 minutes.
+- PLA: 210 °C for the first layer, 205 °C after; bed 60 °C; part fan at 100 % from layer 2.
+- **PLA softens at about 55–60 °C**, and a parked summer cab gets hotter. PLA is fine for fitting everything and a first build; before trusting it in a hot truck, reprint at least the head, base and bail in PETG (the Neo prints it at 230–240 °C on a 70–80 °C bed).
+- Heat-set inserts go into PLA at a lower iron temperature: about 180–200 °C.
+
+To slice by hand instead, import `slicing/ender3-neo-pla.ini` in PrusaSlicer (File › Import › Import Config) and load the STLs from `python3 tools/check_geometry.py --stl stl`.
+
 ## Settings
 - **Material: ASA, or PETG.** A parked summer cab reaches 60–70 °C, which sags PLA. ASA needs an enclosure and shrinks about 0.6 %; turn on your slicer's shrinkage compensation if it has one. The fan cavity already allows for the shrink.
 - 0.2 mm layers; **4 perimeters** (the insert bosses and pivot walls need solid plastic round them); 5 top and bottom layers; 25 % gyroid infill.

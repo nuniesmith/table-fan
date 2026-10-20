@@ -279,9 +279,11 @@ module base() {
                 translate([p[0] - join_boss/2, base_roof - join_boss_h, p[1] - join_boss/2])
                     cube([join_boss, join_boss_h + 0.5, join_boss]);
             for (s = [-1, 1]) pod_column(pod_x + s*pod_screw_dx);
-            // ring round the pot bushing on the wall's inside
+            // ring round the pot bushing on the wall's inside, its edge chamfered
+            // 45 deg: the base prints upside down, so a square edge starts as a ledge
             translate([in_x - pot_boss_t, pot_y, pot_z]) rotate([0, 90, 0])
-                cylinder(d=pot_boss_d, h=pot_boss_t + 0.5);
+                cylinder(d1=pot_boss_d - 2*pot_boss_t, d2=pot_boss_d, h=pot_boss_t + 0.01);
+            translate([in_x - 0.01, pot_y, pot_z]) rotate([0, 90, 0]) cylinder(d=pot_boss_d, h=0.5);
             // column that gives the button pocket its floor (hangs from the roof, so it prints)
             translate([outer_width/2 - btn_pocket_depth - btn_floor, btn_y - 6, btn_z - 6])
                 cube([btn_pocket_depth + btn_floor - base_wall + 0.5, base_roof - btn_y + 6.5, 12]);
@@ -301,7 +303,8 @@ module base() {
         translate([in_x - pot_boss_t - 1, pot_y, pot_z]) rotate([0, 90, 0])
             cylinder(d=pot_hole_d, h=pot_boss_t + base_wall + 2);
         translate([outer_width/2 - knob_recess_depth, pot_y, pot_z])
-            rotate([0, 90, 0]) cylinder(d=knob_recess_d, h=knob_recess_depth + 1);
+            rotate([0, 90, 0]) cylinder(d1=knob_recess_d - 2*knob_recess_depth, d2=knob_recess_d, h=knob_recess_depth + 0.01);
+        translate([outer_width/2, pot_y, pot_z]) rotate([0, 90, 0]) cylinder(d=knob_recess_d, h=1);
         // +X wall: USB-C charge port, through to the bay
         translate([in_x - 1, usb_y - usb_open[1]/2, usb_z - usb_open[0]/2])
             cube([base_wall + 2, usb_open[1], usb_open[0]]);
@@ -317,8 +320,12 @@ module base() {
         // rear wall: Zero USB-C
         translate([zero_usb_x - zero_usb_open[0]/2, zero_usb_y - zero_usb_open[1]/2, in_z1 - 1])
             cube([zero_usb_open[0], zero_usb_open[1], base_wall + 8]);
-        // rear wall: OLED pod opening (wires) + its two screws
-        translate([pod_x - 11, pod_y - 8, in_z1 - 1]) cube([22, 16, base_wall + 2]);
+        // rear wall: OLED pod opening (wires) + its two screws. Its lower edge
+        // comes to a 45 deg point: the base prints upside down, and a flat
+        // edge would be a 22 mm bridge in a 2.5 mm wall (the slicer flagged it).
+        translate([0, 0, in_z1 - 1]) linear_extrude(base_wall + 2)
+            polygon([[pod_x - 7, pod_y + 6], [pod_x + 7, pod_y + 6], [pod_x + 7, pod_y - 2],
+                     [pod_x, pod_y - 9], [pod_x - 7, pod_y - 2]]);
         for (s = [-1, 1])
             translate([pod_x + s*pod_screw_dx, pod_y, in_z1 - 6])
                 cylinder(d=1.7, h=base_wall + 6.1);
@@ -334,8 +341,11 @@ tie_pts = [[55, 77, 0], [21, 75, 0], [6, 93, 1]];
 module tie_bridge(x, z, along_z) {
     translate([x, 0, z]) rotate([0, along_z ? 90 : 0, 0])
         difference() {
-            translate([-4, base_floor - 0.5, -3]) cube([8, 4.5, 6]);
-            translate([-5, base_floor + 0.6, -1.75]) cube([10, 2.2, 3.5]);   // for a 2.5-3 mm tie
+            translate([-4, base_floor - 0.5, -3]) cube([8, 5.5, 6]);
+            // tunnel for a 2.5-3 mm tie, its roof peaked at 45 deg so it needs no bridge
+            translate([-5, 0, 0]) rotate([90, 0, 90]) linear_extrude(10)
+                polygon([[base_floor + 0.6, -1.75], [base_floor + 0.6, 1.75], [base_floor + 2.0, 1.75],
+                         [base_floor + 3.75, 0], [base_floor + 2.0, -1.75]]);   // (Y, Z)
         }
 }
 

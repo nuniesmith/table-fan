@@ -10,7 +10,7 @@ Two parts are still waiting on what arrives:
 - **a clamp for the charge socket**, if it needs one.
 
 ## 0. Have ready
-- **Printed:** head, 2 faceplates, bail, base, bottom plate, battery sled and lid (PLA), and later the OLED pod.
+- **Printed:** head, faceplate, bail, base, bottom plate, battery sled and lid (PLA), and later the OLED pod.
 - **Hardware:** the fixings list in PRINTING.md ("Order now").
 - **Tools:**
   - soldering iron with a heat-set insert tip;
@@ -21,17 +21,17 @@ Two parts are still waiting on what arrives:
 - **Wire:** 18 AWG red/black for power; 26 AWG in several colours for signals.
 
 ## 1. Prepare the prints
-- [ ] Remove brims and skirts. Check that each test print passed: the fan fit, the inserts, the cell fit.
+- [ ] Remove brims and skirts. Check that each test print passed: the fan fit, the bail joint, the inserts, the cell fit.
 - [ ] Heat-set inserts, with the iron at **about 180–200 °C for PLA**, pressed straight and flush:
-  - head: M2 ×8 (front and rear faces), M4 ×2 (sides);
+  - head: M2 ×4 (front face); M3 ×4 (the corner columns' front faces, 28 mm into the cavity, for the fan); M3 ×2 (underneath, at the back); M4 ×2 (the side recesses, through the teeth);
   - base: M3 ×4 (top surface), M3 ×4 (corner bosses underneath).
 - [ ] Clear any stringing out of the holes: the pot hole, the charge socket opening, the button pocket and its leg slots.
 
 ## 2. Head and fan
-- [ ] Head onto the base: 4× M3 × 16 countersunk, from inside the fan cavity down into the base's inserts.
+- [ ] Head onto the base: 4× M3 × 16 countersunk, from inside the fan cavity down into the base's inserts. Then 2× M3 × 8 pan head from inside the empty base, up through the holes in its roof into the head's rear inserts.
 - [ ] Turn the fan so its cable leaves at a **bottom corner**, with the airflow arrow pointing out of the front. Feed the plug down through the slot, lay the cable in the floor groove, and seat the fan.
-- [ ] 4× M3 × 30 from the front through the fan's corner holes, with the nuts in the pockets on the rear face. A drop of threadlocker on each.
-- [ ] Faceplates front and rear: M2 × 6 into the inserts.
+- [ ] 4× M3 × 30 from the front through the fan's corner holes into the columns' inserts. A drop of threadlocker on each.
+- [ ] Faceplate on the front: M2 × 6 into the inserts. (The rear grille is part of the head.)
 
 ## 3. Electronics on the bench
 ### 3a. Set the bucks first
@@ -108,15 +108,15 @@ Plate still beside the base, the dial OFF. Follow **"First power-up, in this ord
 
 ## 7. Close up and finish
 - [ ] Tuck the service loops in, then the bottom plate: 4× M3 × 8 countersunk. Stick on the 4 feet.
-- [ ] Bail: an M4 × 12 each side, with a steel washer under the head and a nylon washer between the arm and the head, plus threadlocker. Tighten until it holds its angle.
+- [ ] Bail: an M4 × 16 thumb screw each side, with a wave washer and a steel washer under its head, through the arm into the pivot insert, the arm's teeth against the wall's. No threadlocker: you turn these by hand. Hand-tight locks the bail; loosen about two turns to move it a 15° step.
 - [ ] Final check:
   - the dial runs smoothly over its whole travel, and clicks off;
   - it charges with the dial off (CHARGING shows);
   - the screen sleeps after 15 s and the button wakes it;
-  - the bail swings from up to resting on the base.
+  - the bail steps from up to folded, holds each step hand-tight, and folded, its arms sit flush with the sides.
 
 ## Looking after it (PLA)
 - PLA softens at about 55–60 °C. **Don't leave the fan in a closed, parked cab in summer**: take it inside, or keep it in the shade low in the cab. A light filament colour soaks up less sun.
 - The OLED module is rated to 60 °C too.
-- PLA creeps a little under constant load. Re-tighten the bail pivots and faceplate screws after the first few weeks.
+- PLA creeps a little under constant load. Check the bail's thumb screws are hand-tight before a drive, and re-tighten the faceplate screws after the first few weeks.
 - If it ever warps, the same files print in PETG or ASA: `tools/slice.py --material petg`.

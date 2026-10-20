@@ -38,11 +38,11 @@ vibration would walk the board loose and stress the USB-C.)
 | Fuse | 1 | 2 A fuse in an inline holder, or a 1.5 A PTC | At BMS P+, before the dial switch. The 40 A BMS alone would let a pinched wire burn |
 | Schottky (Zero 5 V feed) | 0–1 | SS14 or a spare 1N5819 | Only if the Zero's 5V pin is tied straight to USB VBUS (see "Protection and sensing") |
 | Status-pin protection | 0–1 | 10k + 1N4148 clamp to 3V3, or a PC817 optocoupler | Only if the charger's status pin measures above 3.3 V |
-| M2 screws + heat-set inserts | 8+8 | M2×6 countersunk | Faceplates, front and rear |
+| M2 screws + heat-set inserts | 4+4 | M2×6 countersunk | The front faceplate |
 | M2 screws | 4 | M2×6 | Zero carrier to the bottom-plate bosses |
-| M3 screws + heat-set inserts | 8+8 | 4× M3×16 + 4× M3×8, countersunk | Head to base; bottom plate |
-| M3 screws + nuts | 4+4 | M3×30 | Fan, through its corner holes into the head's rear ledges |
-| M4 screws + heat-set inserts | 2+2 | M4×12 + 2 nylon washers | Bail pivots |
+| M3 screws + heat-set inserts | 10+10 | 4× M3×16 + 4× M3×8 countersunk, 2× M3×8 pan head | Head to base, front and rear; bottom plate |
+| M3 screws + heat-set inserts | 4+4 | M3×30 | Fan, through its corner holes into the head's corner columns |
+| M4 thumb screws + heat-set inserts | 2+2 | M4×16 knurled (DIN 464) + 2 wave and 2 steel washers | Bail pivots; teeth round them hold the angle |
 | Other fixings | – | M2 self-tapping: sled 2× M2×8 + lid 4× M2×6, OLED pod 2× M2×10 + module 4× M2×5; 4 stick-on feet | See `docs/DESIGN_OVERVIEW.md` |
 | Wiring, heat-shrink | - | 18 AWG power, 26 AWG signal (on hand) | - |
 | 18650 slot charger | 1 | 2-slot standalone charger (bench) | Check/top-up cells before install – not part of the build |
@@ -224,8 +224,9 @@ Cell weight: ~48 g each → 4S1P ≈ 190 g.
 layer of cells where the BMS now sits) – keep the extra 4 cells as spares for now.
 
 ## Mechanical Layout (matches fan_housing.scad)
-Since 2026-10-18 everything lives in the **base** under the fan, which runs 64 mm
-back behind the head; nothing sits behind the fan. Positions are X across
+Since 2026-10-18 everything lives in the **base** under the fan; nothing sits
+behind the fan but the head's duct, which since 2026-10-20 runs back over the
+whole base. Positions are X across
 (+X = left when facing the fan) and Z front to back, in mm; `models/assembly.scad`
 with `view = "base_layout"` shows them from above.
 - **Sled** (`models/battery_sled.scad`) on the bottom plate against the -X wall
@@ -234,7 +235,7 @@ with `view = "base_layout"` shows them from above.
   Measure the BMS on arrival: up to about 50 × 75 fits the lid beside the buck.
 - **On the plate, +X side**, on foam tape:
   - the 5 V buck (X 22..39, Z 4..26), under the head;
-  - the charger (X 18..43, Z 30..65), behind the head under the vent slots in the base's top, where the fan's intake draws air past it;
+  - the charger (X 18..43, Z 30..65), under the vent slots in the base's top, which open into the head's duct, so the fan draws air past it;
   - the Zero carrier on 4 M2 bosses (X 25..50, Z 67..97), its USB-C at the rear wall.
 - **+X wall**:
   - the dial pot (Z 24): a ring inside makes the wall 3 mm under the nut, and the knob recess is cut from the outside;
@@ -251,10 +252,10 @@ with `view = "base_layout"` shows them from above.
 
 ### Fan mounting
 4× M3 × 30 from the front, through the fan's corner holes (105 mm pattern), into M3
-nuts sitting in pockets on the rear faces of the head's four corner ledges. The nuts
-are behind the ledges, so the bolts clamp the fan against them. Run the bolts through
-the Noctua's rubber anti-vibration pads if yours has them. The grilles front and
-rear are separate parts and don't hold the fan.
+heat-set inserts in the front faces of the head's four corner columns, which run
+from the fan back to the rear grille, outside the blades. Run the bolts through the
+Noctua's rubber anti-vibration pads if yours has them. The front grille is a
+separate part and doesn't hold the fan.
 
 ## Assembly Notes
 - Set both MP1584 outputs **before** connecting anything: 12.0 V (fan) and 5.0 V (Zero).

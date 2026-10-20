@@ -1,7 +1,7 @@
 // Removable faceplate grille for the 120mm Noctua fan housing.
-// Print two: one screws onto the head's front face, one onto its rear face
-// (the fan's intake). Each takes 4x M2 x 6 countersunk screws into M2
-// heat-set inserts at the cardinal points of the head.
+// Print one: it screws onto the head's front face with 4x M2 x 6
+// countersunk screws into M2 heat-set inserts at the cardinal points. The
+// head's rear grille is this pattern too, printed as part of the head.
 // Units: mm
 // Matches fan_housing.scad
 

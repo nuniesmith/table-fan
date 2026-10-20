@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Slice the table fan's print plates for a Creality Ender-3 Neo in PLA.
+"""Slice the table fan's print plates for a Creality Ender-3 Neo, in PLA or PETG.
 
 Exports every part's STL with OpenSCAD (as tools/check_geometry.py does),
-then slices each plate with PrusaSlicer and slicing/ender3-neo-pla.ini, and
-prints each plate's time, filament and any slicer warnings.
+then slices each plate with PrusaSlicer and slicing/ender3-neo-<material>.ini,
+and prints each plate's time, filament and any slicer warnings.
 
-    python3 tools/slice.py --prusaslicer /path/to/prusa-slicer   # -> gcode/
+    python3 tools/slice.py --prusaslicer /path/to/prusa-slicer                  # PLA -> gcode/pla/
+    python3 tools/slice.py --prusaslicer /path/to/prusa-slicer --material petg  # PETG -> gcode/petg/
 
 Needs OpenSCAD and PrusaSlicer 2.7 or later (its AppImage works: pass the
 extracted squashfs-root/AppRun). Copy the .gcode files to the printer's SD
@@ -26,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_geometry as cg  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-CONFIG = ROOT / "slicing" / "ender3-neo-pla.ini"
+CONFIGS = {"pla": ROOT / "slicing" / "ender3-neo-pla.ini", "petg": ROOT / "slicing" / "ender3-neo-petg.ini"}
 
 # The fan-fit test only checks fits, so it prints faster at draft settings.
 DRAFT = ["--layer-height", "0.28", "--perimeters", "2", "--top-solid-layers", "3",
@@ -59,14 +60,17 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--prusaslicer", default=os.environ.get("PRUSASLICER") or shutil.which("prusa-slicer"),
                     help="PrusaSlicer executable (default: $PRUSASLICER or prusa-slicer on PATH)")
-    ap.add_argument("--out", default=str(ROOT / "gcode"), help="where the G-code goes (default gcode/)")
+    ap.add_argument("--material", choices=sorted(CONFIGS), default="pla")
+    ap.add_argument("--out", help="where the G-code goes (default gcode/<material>/)")
     args = ap.parse_args()
+    config = CONFIGS[args.material]
+    material = args.material.upper()
     openscad = os.environ.get("OPENSCAD") or shutil.which("openscad")
     if not openscad or not args.prusaslicer:
         sys.exit("needs OpenSCAD (or $OPENSCAD) and PrusaSlicer (--prusaslicer or $PRUSASLICER)")
 
     tmp = Path(tempfile.mkdtemp(prefix="fan-slice-"))
-    out = Path(args.out)
+    out = Path(args.out or ROOT / "gcode" / args.material)
     out.mkdir(parents=True, exist_ok=True)
     parts = {label: (scad, var, val) for label, scad, var, val in cg.PARTS}
     needed = sorted({p for _, ps, _ in PLATES for p in ps})
@@ -81,7 +85,7 @@ def main():
                 sys.exit(f"{label}: OpenSCAD export failed ({err})")
 
         def slice_plate(name, labels, extra):
-            cmd = [args.prusaslicer, "--export-gcode", "--load", str(CONFIG), *extra]
+            cmd = [args.prusaslicer, "--export-gcode", "--load", str(config), *extra]
             if len(labels) > 1:
                 cmd.append("--merge")
             cmd += ["-o", str(out / f"{name}.gcode")] + [str(tmp / f"{lab}.stl") for lab in labels]
@@ -91,7 +95,7 @@ def main():
         jobs = [(name, pool.submit(slice_plate, name, labels, extra)) for name, labels, extra in PLATES]
         failed = 0
         total_g = 0.0
-        print(f"{'plate':36} {'time':>12} {'PLA g':>7}  warnings")
+        print(f"{'plate':36} {'time':>12} {material + ' g':>7}  warnings")
         for name, fut in jobs:
             code, log = fut.result()
             gcode = out / f"{name}.gcode"
@@ -105,7 +109,7 @@ def main():
             grams = float(g.group(1)) if g else 0.0
             total_g += grams * (2 if "TWICE" in name else 1)
             print(f"{name:36} {t.group(1) if t else '?':>12} {grams:7.1f}  {'; '.join(warnings(log)) or 'none'}")
-    print(f"\n{total_g:.0f} g of PLA in all (the faceplate twice). G-code in {out}")
+    print(f"\n{total_g:.0f} g of {material} in all (the faceplate twice). G-code in {out}")
     shutil.rmtree(tmp, ignore_errors=True)
     sys.exit(1 if failed else 0)
 

@@ -60,16 +60,23 @@ class Battery:
     board. Without the latch the fan's own load toggled it every 100 ms near
     the threshold: the pack sags ~0.1 V while the fan runs and recovers when
     it stops.
+
+    Below `no_pack_v` there is no pack on the divider: the Zero is running
+    from USB, on the bench. (On the pack, the 5 V buck can't run the Zero
+    below ~5.5 V, and the BMS disconnects at ~10 V.) Then there's nothing to
+    protect, so no cutoff; until 2026-10-20 the fan stopped 5 s into every
+    bench test.
     """
 
     def __init__(self, cutoff_v=13.2, resume_v=14.0, full_v=16.8, hold_ms=5000,
-                 smooth=0.2, diff=_sub):
+                 smooth=0.2, diff=_sub, no_pack_v=5.0):
         self.cutoff_v = cutoff_v
         self.resume_v = resume_v
         self.full_v = full_v
         self.hold_ms = hold_ms
         self.smooth = smooth
         self.diff = diff
+        self.no_pack_v = no_pack_v
         self.v = None
         self.cut = False
         self._below_since = None
@@ -80,6 +87,10 @@ class Battery:
             self.v = volts
         else:
             self.v += self.smooth * (volts - self.v)
+        if not self.present():
+            self.cut = False
+            self._below_since = None
+            return self.v, self.cut
         if self.cut:
             if self.v > self.resume_v:
                 self.cut = False
@@ -93,13 +104,17 @@ class Battery:
             self._below_since = None
         return self.v, self.cut
 
+    def present(self):
+        """A pack is on the divider (not USB power on the bench)."""
+        return self.v is not None and self.v >= self.no_pack_v
+
     def percent(self):
         """0% at the cutoff voltage, 100% at full charge, linear between.
 
         (0% used to be 12.0 V, so the screen read 25% at the moment the fan
         was cut off.)
         """
-        if self.v is None:
+        if not self.present():
             return 0
         pct = (self.v - self.cutoff_v) / (self.full_v - self.cutoff_v) * 100
         return int(max(0, min(100, pct)))

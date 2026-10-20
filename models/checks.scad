@@ -41,7 +41,7 @@ module head_pilot_rings() {
     // under each fan nut: the ledge between the nut and the fan
     for (sx = [-1, 1], sy = [-1, 1])
         translate([sx*mount_spacing/2, sy*mount_spacing/2, fan_z0 + fan_thickness + 0.1])
-            difference() { cylinder(d=mount_hole_d + 3, h=gusset_t - fan_nut_depth - 0.2); cylinder(d=mount_hole_d, h=20, center=true); }
+            difference() { cylinder(d=mount_hole_d + 3, h=ledge_under_nut - 0.2); cylinder(d=mount_hole_d, h=20, center=true); }
 }
 module base_pilot_rings() {
     for (sx = [-1, 1], fz = [0, 1]) {
@@ -50,9 +50,9 @@ module base_pilot_rings() {
     }
     for (p = join_pts)
         translate([p[0], 0, p[1]]) difference() { y_cyl(m3_insert_d + 3, head_y0 - m3_insert_depth, m3_insert_depth - 0.2); y_cyl(m3_insert_d, head_y0 - 20, 30); }
-    // the +X wall round the pot bushing, under the knob recess
-    translate([in_x + 0.1, pot_y, pot_z]) rotate([0, 90, 0])
-        difference() { cylinder(d=20, h=base_wall - knob_recess_depth - 0.2); cylinder(d=pot_hole_d, h=20, center=true); }
+    // the wall + boss round the pot bushing, under the knob recess (3 mm)
+    translate([in_x - pot_boss_t + 0.1, pot_y, pot_z]) rotate([0, 90, 0])
+        difference() { cylinder(d=pot_boss_d - 2, h=pot_boss_t + base_wall - knob_recess_depth - 0.2); cylinder(d=pot_hole_d, h=20, center=true); }
 }
 
 if (check == "fan_vs_head") {                   // review: the mezzanine and the dial cut into the fan
@@ -92,11 +92,13 @@ if (check == "fan_vs_head") {                   // review: the mezzanine and the
     intersection() { head(); rear_faceplate(); }
     intersection() { head(); bail_at(0); }
 } else if (check == "fan_bolts") {              // review: the top fan screws could not clamp
-    intersection() { fan_bolts_keepout(); head(); }
+    intersection() { fan_bolts_keepout(); union() { head(); rear_faceplate(); } }
 } else if (check == "oled_fit") {               // review: the pod's posts left no room for the PCB
     intersection() { oled_keepout(); oled_pod(); }
 } else if (check == "oled_on_posts") {          // touch: the PCB seats on the posts
     intersection() { translate([0, 0, 0.2]) oled_pcb_keepout(); oled_pod(); }
+} else if (check == "button_floor") {          // touch: a press on the button bears on a floor, not glue
+    intersection() { translate([-0.2, 0, 0]) button_body_keepout(); base(); }
 } else if (check == "head_pilots") {            // inside: walls round the head's insert pilots
     difference() { head_pilot_rings(); head(); }
 } else if (check == "base_pilots") {            // inside: walls round the base's pilots; the knob recess is on the outer face

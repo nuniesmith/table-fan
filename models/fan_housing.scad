@@ -25,7 +25,7 @@
 //
 // part = head | base | plate | pod renders that part in its print
 // orientation, ready to export:
-//   head  : front face down        base : upside down (top face down)
+//   head  : rear face down         base : upside down (top face down)
 //   plate : flat, bosses up        pod  : window face down
 // None needs supports. part = all shows them assembled; models/assembly.scad
 // adds the bail, faceplates, sled and knob.
@@ -37,14 +37,13 @@ sled_part = "none";             // only the sled's dimensions are needed here
 outer_width = 140;              // head width and height (X, Y)
 fan_size = 120;
 fan_thickness = 25;
-fan_clearance = 0.4;            // per side
+fan_clearance = 0.6;            // per side: ASA shrinks ~0.6%, which takes 0.4 of a 121 mm cavity
 fan_z0 = 3;                     // fan's front face: room for the fan-bolt heads under the faceplate
-gusset_t = 5;                   // corner ledges behind the fan
-head_depth = 36;                // fan_z0 + fan + ledges + 3 for the bolt tails
+head_depth = 36;                // the corner blocks behind the fan run to the rear face
 mount_spacing = 105;            // standard 120 mm fan hole spacing
 mount_hole_d = 3.4;             // M3 clearance (fan bolts)
-fan_nut_ac = 6.6;               // M3 nut pocket on each ledge's rear face, across corners
-fan_nut_depth = 2.6;
+fan_nut_ac = 6.6;               // M3 nut pocket, across corners, open on the rear face
+ledge_under_nut = 2.4;          // plastic between the fan and each nut: M3 x 30 then ends flush with the nut
 gusset_inner = 47;              // ledges cover |X|, |Y| from here out to the cavity wall
 corner_r = 4;
 
@@ -74,11 +73,17 @@ m3_insert_d = 4.2;              // M3 heat-set insert pilot: check your kit
 m3_insert_depth = 6;
 // Head-to-base screws: M3 x 16 countersunk, from the fan cavity floor down
 // into inserts in the base. (X, Z); each lands on a boss under the roof.
-join_pts = [[-50, 6], [50, 6], [-10, 30], [40, 30]];
+join_pts = [[-50, 6], [50, 6], [-10, 30], [38, 30]];
 join_boss = 8;
 join_boss_h = 8;
 // Fan cable: slot through the head's floor and the base's roof (X0, X1, Z0, Z1)
 cable_slot = [14, 26, 4, 30];
+// ... and a groove across the cavity floor, under the fan's open sides, so
+// the cable can run from whichever bottom corner it leaves the fan to the
+// slot. (The fan sits 0.6 mm from the walls: there is no room beside it.)
+cable_groove = [10, 25];        // Z0, Z1: between the front screws' countersinks and the rear ones
+cable_groove_depth = 5;         // full depth from Z0 + depth; the front edge is chamfered 45 deg,
+                                // because the head prints rear face down and that edge is its ceiling
 
 /* [Battery] */
 sled_x0 = -outer_width/2 + base_wall + 0.5;    // -67: against the -X wall
@@ -90,15 +95,29 @@ pot_y = -88;
 pot_z = 24;
 pot_hole_d = 7.5;               // M7 bushing + clearance
 pot_body_d = 24;
-pot_body_depth = 22;            // body + switch + terminals, from the wall's inner face
+pot_body_depth = 22;            // body + switch + terminals, from the boss below
+pot_boss_d = 20;                // thickens the wall round the bushing: the nut clamps 3 mm, not 1.5
+pot_boss_t = 1.5;
 knob_recess_d = 24;             // cut from the outer face
 knob_recess_depth = 1;
 usb_y = -88;
 usb_z = 46;
 usb_open = [13, 10];            // Z, Y: verify against the socket before printing
 btn_y = -88;
-btn_z = 62;
-btn_open = 6.4;                 // 6x6 tactile switch, glued in from outside
+btn_z = 66;
+// 6x6 tactile switch, 8-9.5 mm tall, pushed in from outside into a pocket
+// with a floor: a press bears on the floor, not on glue. Its legs pass
+// through two slots to the inside.
+btn_pocket = 6.3;
+btn_pocket_depth = 3.6;         // the switch body's height
+btn_floor = 2.4;
+btn_leg_pitch = 4.5;            // between the two rows of legs
+
+// Vent slots in the base's top, behind the head, over the charger and the
+// 12 V buck: the fan's intake draws air past them. (X0, X1, Z0, Z1; slots run along Z)
+vents = [[20, 42, 42, 62], [-12, 4, 48, 68]];
+vent_w = 2;
+vent_pitch = 5;
 
 /* [Zero carrier (on the bottom plate)] */
 carrier_size = [25, 30];        // X, Z perfboard; the Zero's USB-C at its rear edge
@@ -174,19 +193,20 @@ module cardinal_pilots(z_face, into) {   // into = +1: drilled toward +Z
             cylinder(d=m2_insert_d, h=m2_insert_depth + 0.1);
 }
 
-// Corner ledges the fan's rear face rests on. M3 bolts come in from the front
-// through the fan's corner holes; their nuts sit in pockets on the ledges'
-// rear faces, so they clamp.
+// Corner blocks the fan's rear face rests on, from the fan back to the rear
+// face, so they print straight up from the bed (the head prints rear face
+// down). M3 bolts come in from the front through the fan's corner holes;
+// their nuts drop into hex pockets open on the rear face, so they clamp.
 module gussets() {
     z0 = fan_z0 + fan_thickness;
     for (sx = [-1, 1], sy = [-1, 1])
         difference() {
             translate([sx > 0 ? gusset_inner : -ci - 0.5, sy > 0 ? gusset_inner : -ci - 0.5, z0])
-                cube([ci + 0.5 - gusset_inner, ci + 0.5 - gusset_inner, gusset_t]);
+                cube([ci + 0.5 - gusset_inner, ci + 0.5 - gusset_inner, head_depth - z0]);
             translate([sx*mount_spacing/2, sy*mount_spacing/2, z0 - 1])
-                cylinder(d=mount_hole_d, h=gusset_t + 2);
-            translate([sx*mount_spacing/2, sy*mount_spacing/2, z0 + gusset_t - fan_nut_depth])
-                cylinder(d=fan_nut_ac, h=fan_nut_depth + 1, $fn=6);
+                cylinder(d=mount_hole_d, h=head_depth - z0 + 2);
+            translate([sx*mount_spacing/2, sy*mount_spacing/2, z0 + ledge_under_nut])
+                cylinder(d=fan_nut_ac, h=head_depth, $fn=6);
         }
 }
 
@@ -210,9 +230,12 @@ module head() {
             y_cyl(3.4, head_y0 - 1, outer_width/2 - ci + 2);
             y_cyl(3.4, -ci - 1.7, 1.8, 6.6);
         }
-        // fan cable down into the base
+        // fan cable down into the base, and the groove that leads it there
         translate([cable_slot[0], head_y0 - 1, cable_slot[2]])
             cube([cable_slot[1] - cable_slot[0], outer_width/2 - ci + 2, cable_slot[3] - cable_slot[2]]);
+        translate([-ci - 0.1, 0, 0]) rotate([90, 0, 90]) linear_extrude(cavity + 0.2)
+            polygon([[-ci + 0.1, cable_groove[0] - 0.1], [-ci - cable_groove_depth, cable_groove[0] + cable_groove_depth],
+                     [-ci - cable_groove_depth, cable_groove[1]], [-ci + 0.1, cable_groove[1]]]);   // (Y, Z)
     }
 }
 
@@ -256,6 +279,12 @@ module base() {
                 translate([p[0] - join_boss/2, base_roof - join_boss_h, p[1] - join_boss/2])
                     cube([join_boss, join_boss_h + 0.5, join_boss]);
             for (s = [-1, 1]) pod_column(pod_x + s*pod_screw_dx);
+            // ring round the pot bushing on the wall's inside
+            translate([in_x - pot_boss_t, pot_y, pot_z]) rotate([0, 90, 0])
+                cylinder(d=pot_boss_d, h=pot_boss_t + 0.5);
+            // column that gives the button pocket its floor (hangs from the roof, so it prints)
+            translate([outer_width/2 - btn_pocket_depth - btn_floor, btn_y - 6, btn_z - 6])
+                cube([btn_pocket_depth + btn_floor - base_wall + 0.5, base_roof - btn_y + 6.5, 12]);
         }
         // bottom-plate screw inserts (from below)
         for (sx = [-1, 1], fz = [0, 1]) {
@@ -269,14 +298,22 @@ module base() {
         translate([cable_slot[0], base_roof - 1, cable_slot[2]])
             cube([cable_slot[1] - cable_slot[0], base_top_t + 2, cable_slot[3] - cable_slot[2]]);
         // +X wall: dial pot hole + knob recess (from the outer face)
-        translate([in_x - 1, pot_y, pot_z]) rotate([0, 90, 0]) cylinder(d=pot_hole_d, h=base_wall + 2);
+        translate([in_x - pot_boss_t - 1, pot_y, pot_z]) rotate([0, 90, 0])
+            cylinder(d=pot_hole_d, h=pot_boss_t + base_wall + 2);
         translate([outer_width/2 - knob_recess_depth, pot_y, pot_z])
             rotate([0, 90, 0]) cylinder(d=knob_recess_d, h=knob_recess_depth + 1);
-        // +X wall: USB-C charge port and screen button, through to the bay
+        // +X wall: USB-C charge port, through to the bay
         translate([in_x - 1, usb_y - usb_open[1]/2, usb_z - usb_open[0]/2])
             cube([base_wall + 2, usb_open[1], usb_open[0]]);
-        translate([in_x - 1, btn_y - btn_open/2, btn_z - btn_open/2])
-            cube([base_wall + 2, btn_open, btn_open]);
+        // +X wall: screen button pocket from outside, and slots for its legs
+        translate([outer_width/2 - btn_pocket_depth, btn_y - btn_pocket/2, btn_z - btn_pocket/2])
+            cube([btn_pocket_depth + 1, btn_pocket, btn_pocket]);
+        for (s = [-1, 1])
+            translate([outer_width/2 - btn_pocket_depth - btn_floor - 0.1, btn_y - 4, btn_z + s*btn_leg_pitch/2 - 0.6])
+                cube([btn_floor + 0.2, 8, 1.2]);
+        // vents in the top, behind the head
+        for (v = vents) for (x = [v[0] : vent_pitch : v[1]])
+            translate([x - vent_w/2, base_roof - 1, v[2]]) cube([vent_w, base_top_t + 2, v[3] - v[2]]);
         // rear wall: Zero USB-C
         translate([zero_usb_x - zero_usb_open[0]/2, zero_usb_y - zero_usb_open[1]/2, in_z1 - 1])
             cube([zero_usb_open[0], zero_usb_open[1], base_wall + 8]);
@@ -290,6 +327,18 @@ module base() {
 }
 
 // ---------- Bottom plate ----------
+// Zip-tie bridges: wiring tied down near the joints survives a truck.
+// (X, Z, 1 = the tie runs along Z)
+tie_pts = [[55, 77, 0], [21, 75, 0], [6, 93, 1]];
+
+module tie_bridge(x, z, along_z) {
+    translate([x, 0, z]) rotate([0, along_z ? 90 : 0, 0])
+        difference() {
+            translate([-4, base_floor - 0.5, -3]) cube([8, 4.5, 6]);
+            translate([-5, base_floor + 0.6, -1.75]) cube([10, 2.2, 3.5]);   // for a 2.5-3 mm tie
+        }
+}
+
 module bottom_plate() {
     sled_screw_z = [sled_z0 + end_t/2, sled_z0 + sled_l - end_t/2];
     difference() {
@@ -299,6 +348,7 @@ module bottom_plate() {
             for (dx = [-1, 1], dz = [-1, 1])
                 translate([zero_usb_x + dx*carrier_hole_dx/2, 0, carrier_z0 + carrier_size[1]/2 + dz*carrier_hole_dz/2])
                     y_cyl(5, base_floor - 0.5, carrier_boss_h + 0.5);
+            for (t = tie_pts) tie_bridge(t[0], t[1], t[2]);
         }
         // M3 countersunk screws into the base's corner bosses
         for (sx = [-1, 1], fz = [0, 1]) {
@@ -318,9 +368,9 @@ module bottom_plate() {
         for (dx = [-1, 1], dz = [-1, 1])
             translate([zero_usb_x + dx*carrier_hole_dx/2, 0, carrier_z0 + carrier_size[1]/2 + dz*carrier_hole_dz/2])
                 y_cyl(1.7, base_floor - 1.5, carrier_boss_h + 2);
-        // vent slots under the charger and buck
-        for (x = [22 : 5 : 42])
-            translate([x - 1, base_bottom - 1, 10]) cube([2, plate_t + 2, 50]);
+        // vent slots under the charger
+        for (x = [21 : 5 : 41])
+            translate([x - 1, base_bottom - 1, charger_pos[1] + 3]) cube([2, plate_t + 2, charger_size[2] - 6]);
         // recesses for stick-on feet
         for (sx = [-1, 1], z = [16, 84])
             translate([sx*55, 0, z]) y_cyl(12, base_bottom - 0.1, 1.1);
@@ -366,8 +416,8 @@ charger_size = [25, 8, 35];     // 4S Type-C boost charger
 buck_size = [17, 5, 22];        // MP1584 mini
 bms_pos = [sled_x0 + 3, sled_z0 + 8];          // X0, Z0 on the lid
 buck2_pos = [sled_x0 + 55, sled_z0 + 40];      // 12 V buck, on the lid beside the BMS
-charger_pos = [19, 4];                          // on the plate
-buck1_pos = [22, 42];                           // 5 V buck, on the plate
+charger_pos = [18, 30];                         // on the plate, behind the head under the vents
+buck1_pos = [22, 4];                            // 5 V buck, on the plate, under the head
 
 module fan_keepout() {
     translate([-fan_size/2, -fan_size/2, fan_z0]) cube([fan_size, fan_size, fan_thickness]);
@@ -384,21 +434,33 @@ module carrier_keepout() {
         cube([carrier_size[0], 12.5, carrier_size[1] + 0.5]);
 }
 module pot_keepout() {          // body + switch + terminals, and the bushing through the wall
-    translate([in_x - pot_body_depth, pot_y, pot_z]) rotate([0, 90, 0]) cylinder(d=pot_body_d + 2, h=pot_body_depth);
-    translate([in_x - 0.1, pot_y, pot_z]) rotate([0, 90, 0]) cylinder(d=7, h=base_wall + 1.2);
+    translate([in_x - pot_boss_t - pot_body_depth, pot_y, pot_z]) rotate([0, 90, 0])
+        cylinder(d=pot_body_d + 2, h=pot_body_depth);
+    translate([in_x - pot_boss_t - 0.1, pot_y, pot_z]) rotate([0, 90, 0])
+        cylinder(d=7, h=pot_boss_t + base_wall + 1.2);
 }
 module usb_socket_keepout() {
     translate([in_x - 15, usb_y - 7, usb_z - 7]) cube([15, 14, 14]);
 }
-module button_keepout() {
-    translate([in_x - 6.5, btn_y - 4, btn_z - 4]) cube([6.5, 8, 8]);
+module button_keepout() {       // its legs, solder and wires inside the floor
+    translate([outer_width/2 - btn_pocket_depth - btn_floor - 5, btn_y - 5, btn_z - 4]) cube([5, 10, 8]);
+}
+module button_body_keepout() {  // the 6x6 switch body, seated in its pocket
+    translate([outer_width/2 - btn_pocket_depth, btn_y - 3, btn_z - 3]) cube([btn_pocket_depth, 6, 6]);
 }
 // What has to pass through each opening, at fixed sizes: the charge socket's
 // body (12 x 9), the 6x6 button, the Zero's USB-C plug (12 x 7 overmould),
 // and the fan's 4-pin plug (10 x 7) down through the cable slot.
 module openings_keepout() {
     translate([in_x - 1, usb_y - 4.5, usb_z - 6]) cube([base_wall + 6, 9, 12]);
-    translate([in_x - 1, btn_y - 3, btn_z - 3]) cube([base_wall + 6, 6, 6]);
+    translate([outer_width/2 - btn_pocket_depth + 0.1, btn_y - 3, btn_z - 3]) cube([btn_pocket_depth + 5, 6, 6]);
+    // the fan cable (4 x 6 mm, kept 0.5 below the floor so the fan can't pinch
+    // it) along the floor groove, corner to corner
+    translate([-ci + 1, -ci - 4.5, (cable_groove[0] + cable_groove_depth + cable_groove[1])/2 - 3])
+        cube([2*ci - 2, 4, 6]);
+    // each vent slot is open
+    for (v = vents) for (x = [v[0] : vent_pitch : v[1]])
+        translate([x - vent_w/2 + 0.3, base_roof - 0.5, v[2] + 0.5]) cube([vent_w - 0.6, base_top_t + 1, v[3] - v[2] - 1]);
     translate([zero_usb_x - 6, zero_usb_y - 3.5, in_z1 - 0.5]) cube([12, 7, 18]);
     translate([(cable_slot[0] + cable_slot[1])/2 - 5, base_roof - 3, (cable_slot[2] + cable_slot[3])/2 - 3.5])
         cube([10, -ci - base_roof + 4, 7]);
@@ -412,16 +474,17 @@ module oled_keepout() {         // PCB + glass, seated on the posts
     oled_pcb_keepout();
     translate([pod_x - 26.7/2, pod_y - 19.3/2, oled_pcb_front]) cube([26.7, 19.3, oled_glass_t]);
 }
-module fan_bolts_keepout() {    // M3 bolt shanks and their nuts
+module fan_bolts_keepout() {    // M3 x 30 bolts from the fan's front flange, and their nuts
     for (sx = [-1, 1], sy = [-1, 1]) translate([sx*mount_spacing/2, sy*mount_spacing/2, 0]) {
-        translate([0, 0, 1]) cylinder(d=3, h=fan_z0 + fan_thickness + gusset_t + 1.6);
-        translate([0, 0, fan_z0 + fan_thickness + gusset_t - 2.4]) cylinder(d=6.35, h=2.4, $fn=6);
+        translate([0, 0, fan_z0 - 2]) cylinder(d=5.5, h=2);                 // pan head
+        translate([0, 0, fan_z0]) cylinder(d=3, h=30);
+        translate([0, 0, fan_z0 + fan_thickness + ledge_under_nut]) cylinder(d=6.35, h=2.4, $fn=6);
     }
 }
 
 // ---------- Render ----------
 if (part == "head") {
-    head();
+    translate([0, 0, head_depth]) rotate([180, 0, 0]) head();    // rear face down
 } else if (part == "base") {
     translate([0, 0, head_y0]) rotate([-90, 0, 0]) base();
 } else if (part == "plate") {

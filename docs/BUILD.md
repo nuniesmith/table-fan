@@ -6,7 +6,7 @@ From printed parts to a running fan, in order. The details live elsewhere; this 
 - firmware: [firmware/README.md](../firmware/README.md).
 
 Two parts are still waiting on what arrives:
-- **the OLED pod:** send its hole spacing and glass size when the module comes, and its model gets finalised;
+- **the OLED pod** is sized from the module's listing (27.3 × 27.8 mm board). The listing doesn't give the hole spacing: check the module's holes are **23.3 × 23.8 mm apart** (centre to centre) before printing it;
 - **a clamp for the charge socket**, if it needs one.
 
 ## 0. Have ready
@@ -77,7 +77,7 @@ Cut every wire below to length, label both ends, and heat-shrink every joint. Le
 | 5 V | 5 V buck out → (Schottky) → Zero 5V | 26 orange | 130 mm |
 | Dial | pot ends + wiper → 3V3 / GND / GP27 (3) | 26 | 220 mm |
 | Button | button → GP11 / GND (2) | 26 | 190 mm |
-| OLED | 3V3 / GND / SDA → GP0 / SCL → GP1 (4) | 26 | 240 mm |
+| OLED | header GND, VCC, SCL, SDA → GND, 3V3, GP1, GP0 (4) | 26 | 240 mm |
 | Fan | the fan's own cable → carrier header | (fan cable) | about 260 mm needed; if short, use the cut extension's other half |
 
 Optional: JST-XH plugs on the dial, button and OLED leads, which are 26 AWG, would let the plate come right out. Keep the 18 AWG power leads soldered: JST-XH only takes 22 AWG and thinner, and soldered joints survive vibration best.
@@ -117,5 +117,6 @@ Plate still beside the base, the dial OFF. Follow **"First power-up, in this ord
 
 ## Looking after it (PLA)
 - PLA softens at about 55–60 °C. **Don't leave the fan in a closed, parked cab in summer**: take it inside, or keep it in the shade low in the cab. A light filament colour soaks up less sun.
+- The OLED module is rated to 60 °C too.
 - PLA creeps a little under constant load. Re-tighten the bail pivots and faceplate screws after the first few weeks.
 - If it ever warps, the same files print in PETG or ASA: `tools/slice.py --material petg`.

@@ -129,14 +129,16 @@ carrier_hole_dz = 26;
 zero_usb_open = [12.5, 7.5];    // X, Y: room for the plug's overmould
 
 /* [OLED pod] */
-// 0.96" SSD1306 module (~27.5 x 28 mm PCB, M2 holes ~23 x 23 mm apart). Only
-// this small part needs reprinting if the real module differs.
-oled_pcb = [27.5, 28];
-oled_hole_dx = 23;
-oled_hole_dy = 23;
+// 0.96" SSD1306 module, from its listing: 27.3 x 27.8 mm PCB, 21.74 x 10.86 mm
+// active area, header GND VCC SCL SDA, rated -20..60 C. The listing doesn't give
+// the M2 holes; these boards put them 2 mm in from each edge, 23.3 x 23.8 apart.
+// Measure yours before printing: only this small part changes if they differ.
+oled_pcb = [27.3, 27.8];
+oled_hole_dx = 23.3;
+oled_hole_dy = 23.8;
 oled_glass_t = 1.8;             // PCB front face to glass face
 oled_post_d = 3.6;
-oled_win = [26, 13];
+oled_win = [24, 13];            // the 21.74 x 10.86 active area plus a margin
 oled_win_dy = 0;                // move the window up (+) or down (-) to match the glass
 pod_wall = 2;
 pod_depth = 12;

@@ -17,7 +17,7 @@ waits for the module, so its hole spacing can be measured first. Run
 2. **Head**, **two faceplates** and the **bail**: these depend only on the fan's standard size.
 3. **Sled + lid** and the **bottom plate**.
 4. **Base**. It depends on the pot, charge socket and button, so print `side_wall` with the real parts first. To print it sooner, check the WH138 against the listing (M7 bushing, 24 mm body) and plan to file the 13 × 10 socket opening if your socket differs.
-5. **OLED pod**, once the module is measured: set the `oled_*` parameters.
+5. **OLED pod**: sized from the module's listing. Check that its mounting holes are 23.3 × 23.8 mm apart before printing; otherwise set `oled_hole_dx` / `oled_hole_dy` and re-slice.
 
 The knob is a backup only: the aluminium knob ships with the pot.
 
@@ -38,6 +38,7 @@ them in number order:
 | 05 | Bail + sled lid | 3 h 17 | 34 g |
 | 06 | Bottom plate + battery sled | 8 h 24 | 82 g |
 | 07 | Base | 9 h 20 | 90 g |
+| 08 | OLED pod (check the module's holes first) | 1 h 05 | 7 g |
 
 About 51 hours and 480 g of PLA in all. Print 01 and 02 first, and check
 them before going on (see "Print order" above). If a test shows a fit is off,

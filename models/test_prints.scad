@@ -9,7 +9,9 @@
 //                        holes, the nuts sit in their pockets, and a faceplate
 //                        screws on the back.
 //   test = "side_wall" : the base's +X wall round the dial pot, charge port and
-//                        button: check each part when it arrives.
+//                        button, standing on its top edge as the base prints, so
+//                        the openings come out as they will in the base. Check
+//                        each part when it arrives.
 //   test = "sled_end"  : one end of the battery sled: a cell should slide in
 //                        without force or rattle.
 // Units: mm
@@ -49,11 +51,11 @@ module fan_fit() {                // rear face on the bed, as the head prints
         }
 }
 
-module side_wall() {              // outer face on the bed
-    translate([-6, 88, outer_width/2]) rotate([0, 90, 0])
+module side_wall() {              // top edge on the bed, as the base prints
+    translate([-58, -6, head_y0]) rotate([-90, 0, 0])
         intersection() {
             base();
-            translate([58, pot_y - 14, 6]) cube([13, 28, 72]);
+            translate([58, pot_y - 14, 6]) cube([13, head_y0 + 0.1 - (pot_y - 14), 72]);
         }
 }
 

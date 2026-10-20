@@ -1,3 +1,5 @@
 # STLs exported by tools/check_geometry.py --stl
 stl/
+# G-code written by tools/slice.py
+gcode/
 __pycache__/

@@ -41,7 +41,10 @@ table-fan/
 │   ├── test_prints.scad      ← quick fit tests: inserts, fan, side wall, sled end
 │   └── checks.scad           ← fit checks, run by tools/check_geometry.py
 ├── tools/
-│   └── check_geometry.py
+│   ├── check_geometry.py
+│   └── slice.py              ← G-code for an Ender-3 Neo, in PLA
+├── slicing/
+│   └── ender3-neo-pla.ini    ← PrusaSlicer config (Creality profile + this project's settings)
 ├── firmware/
 └── electronics/
     ├── ELECTRONICS_BOM_AND_WIRING.md
@@ -65,6 +68,7 @@ table-fan/
    | Test prints | `test_prints.scad` | `test = "inserts"`, `"fan_fit"`, `"side_wall"`, `"sled_end"` | as rendered |
 
    Or run `python3 tools/check_geometry.py --stl stl`: it checks everything and writes every STL, test prints included, to `stl/`.
+   For a Creality Ender-3 Neo in PLA, `python3 tools/slice.py --prusaslicer /path/to/prusa-slicer` writes ready G-code for all seven plates; see [docs/PRINTING.md](docs/PRINTING.md).
 3. Slice in your preferred slicer. **ASA, or PETG**: a parked summer cab reaches 60–70 °C, which sags PLA. Settings and the print order are in [docs/PRINTING.md](docs/PRINTING.md).
 
 ## Checking the geometry

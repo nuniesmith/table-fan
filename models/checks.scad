@@ -50,9 +50,9 @@ module base_pilot_rings() {
     }
     for (p = join_pts)
         translate([p[0], 0, p[1]]) difference() { y_cyl(m3_insert_d + 3, head_y0 - m3_insert_depth, m3_insert_depth - 0.2); y_cyl(m3_insert_d, head_y0 - 20, 30); }
-    // the wall + boss round the pot bushing, under the knob recess (3 mm)
+    // the wall + boss under the pot nut (3 mm), across the M7 nut and washer's 14 mm
     translate([in_x - pot_boss_t + 0.1, pot_y, pot_z]) rotate([0, 90, 0])
-        difference() { cylinder(d=pot_boss_d - 2, h=pot_boss_t + base_wall - knob_recess_depth - 0.2); cylinder(d=pot_hole_d, h=20, center=true); }
+        difference() { cylinder(d=14, h=pot_boss_t + base_wall - knob_recess_depth - 0.2); cylinder(d=pot_hole_d, h=20, center=true); }
 }
 
 if (check == "fan_vs_head") {                   // review: the mezzanine and the dial cut into the fan

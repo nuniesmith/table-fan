@@ -36,42 +36,48 @@ MODELS = Path(__file__).resolve().parent.parent / "models"
 CHECKS = [
     ("airflow", "clear", "nothing but the rear grille behind the fan's blades"),
     ("fan_vs_head", "clear", "the fan fits its cavity"),
-    ("fan_on_ledges", "touch", "the fan's rear corners bear on the ledges"),
-    ("fan_bolts", "clear", "the fan bolts and nuts have their holes and pockets"),
+    ("fan_on_ledges", "touch", "the fan's rear corners bear on the corner columns"),
+    ("fan_bolts", "clear", "the fan bolts reach their inserts in the columns"),
     ("cells_vs_sled", "clear", "four 18650s fit the sled"),
     ("sled_vs_body", "clear", "the sled fits the base"),
-    ("boards_vs_body", "clear", "BMS, charger, bucks, carrier, pot, USB-C and button fit the base"),
+    ("boards_vs_body", "clear", "BMS, charger, bucks, carrier, pot, USB-C, button and the rear screws fit the base"),
     ("boards_vs_each_other", "clear", "those parts, the sled and the fan don't overlap (pot vs fan included)"),
     ("openings", "clear", "USB-C, button, Zero plug, fan cable (slot + floor groove) and vents are open"),
-    ("bail_sweep", "clear", "the bail swings from up to rest without hitting anything"),
-    ("bail_rests", "touch", "swung back, the bail lands on the base"),
-    ("parts_mate", "clear", "head, base, plate, pod, faceplates and bail don't overlap"),
+    ("bail_sweep", "clear", "loosened, the bail swings from up to folded without hitting anything"),
+    ("bail_detents", "clear", "at every 15 deg step the bail's teeth mesh with the wall's"),
+    ("bail_teeth_engage", "touch", "clamped, the bail's teeth bear on the wall's"),
+    ("bail_folds_flush", "clear", "folded, the bail stays within the head's sides"),
+    ("hook_clearance", "clear", "up, the bar clears the head's top by at least 40 mm for a hook"),
+    ("parts_mate", "clear", "head, base, plate, pod, faceplate and bail don't overlap"),
     ("oled_fit", "clear", "the OLED module fits its pod"),
     ("oled_on_posts", "touch", "the OLED PCB seats on the posts"),
     ("button_floor", "touch", "a press on the screen button bears on a floor, not on glue"),
-    ("head_pilots", "inside", "1.2-1.5 mm of wall round the head's insert pilots and fan bolts"),
+    ("head_pilots", "inside", "1.2-1.5 mm of wall round the head's insert pilots"),
     ("base_pilots", "inside", "walls round the base's insert pilots; knob recess on the outer face"),
 ]
 
 # --self-test: one deliberate breakage per check, which must make it fail.
 # A check that still passes here can't see what it claims to guard.
 MUTATIONS = {
-    "airflow": {"gusset_inner": "30"},                  # ledges reach into the blades
+    "airflow": {"column_inner": "30"},                  # columns reach into the blades
     "fan_vs_head": {"fan_clearance": "-0.5"},           # cavity smaller than the fan
-    "fan_on_ledges": {"gusset_inner": "61"},            # no ledges
-    "fan_bolts": {"head_depth": "30"},                  # nuts and bolt tails into the rear grille
+    "fan_on_ledges": {"column_inner": "61"},            # no columns under the fan
+    "fan_bolts": {"m3_insert_depth": "3"},              # bolt tails into the columns past the pilots
     "cells_vs_sled": {"cell_gap": "-1"},                # pockets smaller than the cells
     "sled_vs_body": {"sled_z0": "5"},                   # sled into the front bosses
     "boards_vs_body": {"charger_pos": "[50, 4]"},       # charger into the pot and a boss
     "boards_vs_each_other": {"buck1_pos": "[22, 30]"},  # buck onto the charger
     "openings": {"cable_groove_depth": "1"},            # cable groove too shallow for the cable
-    "bail_sweep": {"bail_len": "62"},                   # bar hits the head
-    "bail_rests": {"bail_rest_angle": "140"},           # bar never reaches the base
-    "parts_mate": {"bail_washer": "-1.5"},              # bail arms into the head's sides
+    "bail_sweep": {"bail_len": "50"},                   # bar hits the head's top rear edge
+    "bail_detents": {"tooth_n": "23"},                  # teeth out of step with 15 deg
+    "bail_teeth_engage": {"tooth_h": "0.01"},           # no teeth
+    "bail_folds_flush": {"bail_arm_t": "8"},            # arms thicker than the recess
+    "hook_clearance": {"pivot_y": "40"},                # bar 16 mm lower
+    "parts_mate": {"tooth_gap": "-0.4"},                # arms' teeth into the wall's
     "oled_fit": {"oled_post_d": "6"},                   # posts onto the glass
     "oled_on_posts": {"oled_post_d": "0.01"},           # no posts
     "button_floor": {"btn_floor": "0"},                 # pocket goes straight through
-    "head_pilots": {"m4_insert_depth": "11"},           # pivot pilot breaks into the cavity
+    "head_pilots": {"pivot_y": "66"},                   # pivot insert breaks out of the head's top
     "base_pilots": {"boss_s": "6"},                     # corner bosses too thin
 }
 
@@ -88,6 +94,7 @@ PARTS = [
     ("knob", "knob.scad", None, None),
     ("test_inserts", "test_prints.scad", "test", "inserts"),
     ("test_fan_fit", "test_prints.scad", "test", "fan_fit"),
+    ("test_bail_joint", "test_prints.scad", "test", "bail_joint"),
     ("test_side_wall", "test_prints.scad", "test", "side_wall"),
     ("test_sled_end", "test_prints.scad", "test", "sled_end"),
 ]

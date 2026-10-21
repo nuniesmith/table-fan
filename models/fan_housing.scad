@@ -3,22 +3,27 @@
 // Mounting hole spacing: 105 mm center-to-center
 // Units: millimeters
 // Author: Grok design for nuniesmith/table-fan, reworked Oct 2026;
-//         head and base redesigned 2026-10-18 after the design review
+//         head and base redesigned 2026-10-18 after the design review;
+//         head deepened to the base's rear face 2026-10-20
 //
 // LAYOUT
-//   Head : a square frame round the fan, open front and back. A faceplate
-//          grille screws onto each face (models/faceplate.scad, print two).
-//          The fan's rear corners rest on four corner ledges and are bolted
-//          to them; nothing else sits behind the fan, so its intake is clear.
-//   Base : under the head and running back behind it, open at the bottom
-//          (a bottom plate closes it). Holds the 4S pack in
-//          models/battery_sled.scad (four cells side by side, axes front to
-//          back) with the BMS on the sled's lid, plus the charger, both
-//          MP1584 bucks and the Zero carrier.
+//   Head : a square frame round the fan at the front, and behind it a duct
+//          back to the base's rear face, closed by a grille printed with the
+//          head. The front grille screws on (models/faceplate.scad). The
+//          fan's rear corners rest and bolt on four corner columns that run
+//          from the fan to the rear grille, outside the blades, so the intake
+//          is clear. Behind the front frame the duct is narrower by the
+//          bail's arms on each side, so the folded bail finishes flush.
+//   Base : under the head, front to back, open at the bottom (a bottom
+//          plate closes it). Holds the 4S pack in models/battery_sled.scad
+//          (four cells side by side, axes front to back) with the BMS on the
+//          sled's lid, plus the charger, both MP1584 bucks and the Zero
+//          carrier.
 //   +X base wall   : dial pot (speed + hard power), USB-C charge port,
 //                    screen button
 //   Rear base wall : Zero USB-C (programming port) cutout + collar, OLED pod
-//   Head sides     : bail pivots (models/bail.scad)
+//   Duct sides     : bail pivots, toothed so the bail locks every 15 deg
+//                    (models/bail.scad)
 //
 // Coordinates: X across (+X = left when facing the fan), Y up (fan centre at
 // Y 0), Z front to back (front face at Z 0).
@@ -32,6 +37,7 @@
 
 include <battery_sled.scad>
 sled_part = "none";             // only the sled's dimensions are needed here
+use <faceplate.scad>            // its grille pattern is the head's rear grille
 
 /* [Head] */
 outer_width = 140;              // head width and height (X, Y)
@@ -39,26 +45,41 @@ fan_size = 120;
 fan_thickness = 25;
 fan_clearance = 0.6;            // per side: ASA shrinks ~0.6%, which takes 0.4 of a 121 mm cavity
 fan_z0 = 3;                     // fan's front face: room for the fan-bolt heads under the faceplate
-head_depth = 36;                // the corner blocks behind the fan run to the rear face
+fan_section = 36;               // the full-width frame round the fan; the duct runs on from here
+head_depth = 100;               // to the base's rear face: the fan draws through the whole duct
+duct_wall = 2.4;
+rear_grille_t = 2.8;            // the faceplate's grille, printed on the bed as the head's first layers
 mount_spacing = 105;            // standard 120 mm fan hole spacing
-mount_hole_d = 3.4;             // M3 clearance (fan bolts)
-fan_nut_ac = 6.6;               // M3 nut pocket, across corners, open on the rear face
-ledge_under_nut = 2.4;          // plastic between the fan and each nut: M3 x 30 then ends flush with the nut
-gusset_inner = 47;              // ledges cover |X|, |Y| from here out to the cavity wall
+// The fan's M3 x 30 bolts screw into M3 heat-set inserts in the columns' front
+// faces. Nuts would sit behind the columns, where the rear grille closes the
+// duct and no hand can reach.
+column_inner = 47;              // corner columns cover |X|, |Y| from here out to the walls
 corner_r = 4;
 
-/* [Faceplates] */
-// The front and rear grilles are the same part (faceplate.scad, print two).
-// M2 screws into M2 heat-set inserts at the cardinal points. (The old hex
-// nut pockets opened on the face itself, so a screw pulled its nut out
-// toward the faceplate instead of clamping.) MUST match faceplate.scad.
+/* [Faceplate] */
+// The front grille (faceplate.scad, print one), on M2 screws into M2
+// heat-set inserts at the cardinal points. The rear grille is the same
+// pattern, part of the head. (The old hex nut pockets opened on the face
+// itself, so a screw pulled its nut out toward the faceplate instead of
+// clamping.) MUST match faceplate.scad.
 faceplate_screw_offset = 66;
 m2_insert_d = 3.2;              // M2 heat-set insert pilot: check your kit
 m2_insert_depth = 5;
 
 /* [Bail pivots] */
-pivot_y = 10;
-pivot_z = 28;
+// The bail's arms pivot on M4 thumb screws into heat-set inserts in the top
+// corner columns. Each side of the duct is recessed by an arm and its teeth,
+// so folded, the arms finish flush with the front frame and the base. Teeth
+// round each pivot, on the recess floor and on the arm, mesh every 15 deg,
+// and the thumb screw clamps them, so the angle can't slip in a truck.
+pivot_y = 56;                   // high, for hook room over the head
+pivot_z = 48;                   // the arm's round end clears the front frame's 45 deg step
+side_recess = 7;                // MUST equal bail_arm_t + tooth_h + tooth_gap, for flush arms
+bail_arm_t = 6;                 // X (bail.scad)
+tooth_n = 24;                   // 15 deg steps
+tooth_h = 0.8;
+tooth_r = [5.5, 9.5];           // the toothed ring's inner and outer radius
+tooth_gap = 0.2;                // between meshed flanks
 m4_insert_d = 5.6;              // M4 heat-set insert pilot: check your kit
 m4_insert_depth = 8.5;
 
@@ -76,6 +97,10 @@ m3_insert_depth = 6;
 join_pts = [[-50, 6], [50, 6], [-10, 30], [38, 30]];
 join_boss = 8;
 join_boss_h = 8;
+// ... and two at the back, M3 x 8 pan head from inside the base, up through
+// the roof into inserts in the head's bottom corner columns: the duct covers
+// the base's whole top, and the bail hangs everything from the head.
+rear_join_pts = [[-54, 86], [54, 86]];
 // Fan cable: slot through the head's floor and the base's roof (X0, X1, Z0, Z1)
 cable_slot = [14, 26, 4, 30];
 // ... and a groove across the cavity floor, under the fan's open sides, so
@@ -113,8 +138,9 @@ btn_pocket_depth = 3.6;         // the switch body's height
 btn_floor = 2.4;
 btn_leg_pitch = 4.5;            // between the two rows of legs
 
-// Vent slots in the base's top, behind the head, over the charger and the
-// 12 V buck: the fan's intake draws air past them. (X0, X1, Z0, Z1; slots run along Z)
+// Vent slots in the base's top, behind the front frame, over the charger and
+// the 12 V buck. They carry on through the duct's floor, so the fan draws air
+// up past those boards. (X0, X1, Z0, Z1; slots run along Z)
 vents = [[20, 42, 42, 62], [-12, 4, 48, 68]];
 vent_w = 2;
 vent_pitch = 5;
@@ -158,6 +184,9 @@ head_y0 = -outer_width/2;                       // -70: head bottom = base top
 base_roof = head_y0 - base_top_t;               // -72.5
 base_floor = base_roof - base_inner_h;          // -103.5: plate top
 base_bottom = base_floor - plate_t;             // -106.5
+duct_x = outer_width/2 - side_recess;           // 63: the duct's side faces, where the bail's teeth are
+duct_in_x = duct_x - duct_wall;                 // 60.6
+duct_in_y = outer_width/2 - duct_wall;          // 67.6
 in_x = outer_width/2 - base_wall;               // 67.5
 in_z0 = base_wall;
 in_z1 = base_depth - base_wall;
@@ -188,6 +217,19 @@ module y_cyl(d, y0, h, d2 = -1) {        // cylinder along +Y from y0
         cylinder(d1=d, d2=(d2 < 0 ? d : d2), h=h);
 }
 
+module both_sides() { children(); mirror([1, 0, 0]) children(); }
+
+// A ring of n radial teeth, h tall, standing on the plane z = 0; tooth k is
+// centred at phase + k*360/n deg. Each tooth's roots run along radii, so two
+// rings mesh face to face half a tooth apart, with the flanks matching at
+// every radius.
+module serration(n, r0, r1, h, phase = 0) {
+    for (k = [0 : n - 1]) rotate([0, 0, phase + k*360/n])
+        hull() for (r = [r0, r1])
+            translate([r*cos(180/n), 0, 0]) rotate([90, 0, 90]) linear_extrude(0.01)
+                polygon([[-r*sin(180/n), 0], [r*sin(180/n), 0], [0, h]]);
+}
+
 // ---------- Head ----------
 module cardinal_pilots(z_face, into) {   // into = +1: drilled toward +Z
     for (a = [0, 90, 180, 270]) rotate([0, 0, a])
@@ -195,49 +237,108 @@ module cardinal_pilots(z_face, into) {   // into = +1: drilled toward +Z
             cylinder(d=m2_insert_d, h=m2_insert_depth + 0.1);
 }
 
-// Corner blocks the fan's rear face rests on, from the fan back to the rear
-// face, so they print straight up from the bed (the head prints rear face
-// down). M3 bolts come in from the front through the fan's corner holes;
-// their nuts drop into hex pockets open on the rear face, so they clamp.
-module gussets() {
+// Corner columns, from the fan's rear face to the rear grille, outside the
+// blades. The fan's corners rest on their front faces and bolt into inserts
+// there, and the top two carry the bail's pivots. They print straight up
+// from the bed (the head prints rear face down): ledges stopping behind the
+// fan would be 64 mm in the air.
+// The bottom two reach down to the base, which closes the duct: they take the
+// rear head-to-base screws.
+module columns() {
     z0 = fan_z0 + fan_thickness;
-    for (sx = [-1, 1], sy = [-1, 1])
-        difference() {
-            translate([sx > 0 ? gusset_inner : -ci - 0.5, sy > 0 ? gusset_inner : -ci - 0.5, z0])
-                cube([ci + 0.5 - gusset_inner, ci + 0.5 - gusset_inner, head_depth - z0]);
-            translate([sx*mount_spacing/2, sy*mount_spacing/2, z0 - 1])
-                cylinder(d=mount_hole_d, h=head_depth - z0 + 2);
-            translate([sx*mount_spacing/2, sy*mount_spacing/2, z0 + ledge_under_nut])
-                cylinder(d=fan_nut_ac, h=head_depth, $fn=6);
+    for (sx = [-1, 1], sy = [-1, 1]) {
+        y0 = sy > 0 ? column_inner : head_y0;
+        y1 = sy > 0 ? ci + 0.7 : -column_inner;
+        translate([sx > 0 ? column_inner : -duct_in_x - 0.5, y0, z0])
+            cube([duct_in_x + 0.5 - column_inner, y1 - y0, head_depth - rear_grille_t + 0.1 - z0]);
+    }
+}
+
+// The duct's outside: its top edges rounded like the frame's, its bottom ones
+// square, so its sides stand flat on the base.
+module duct_outer(z0, z1) {
+    hull() {
+        for (sx = [-1, 1]) translate([sx*(duct_x - corner_r), outer_width/2 - corner_r, z0]) cylinder(r=corner_r, h=z1 - z0);
+        translate([-duct_x, head_y0, z0]) cube([2*duct_x, 1, z1 - z0]);
+    }
+}
+
+// The faceplate's rings and spokes over the fan's disc, and solid round it.
+module rear_grille() {
+    translate([0, 0, head_depth - rear_grille_t]) intersection() {
+        translate([-duct_in_x - 0.5, head_y0, 0]) cube([2*duct_in_x + 1, duct_in_y + 0.5 - head_y0, rear_grille_t]);
+        union() {
+            intersection() { faceplate(); cylinder(d=fan_size - 4, h=rear_grille_t); }
+            difference() {
+                translate([-outer_width/2, -outer_width/2, 0]) cube([outer_width, outer_width, rear_grille_t]);
+                translate([0, 0, -1]) cylinder(d=fan_size - 4, h=rear_grille_t + 2);
+            }
         }
+    }
+}
+
+module side_teeth() {           // round each pivot, on the recess floor
+    both_sides() translate([duct_x - 0.01, pivot_y, pivot_z]) rotate([0, 90, 0])
+        serration(tooth_n, tooth_r[0], tooth_r[1], tooth_h + 0.01);
 }
 
 module head() {
+    // where the duct's inside reaches full size: the bottom, open onto the
+    // base, at 45 deg from the frame's floor; the top a little steeper
+    duct_z0 = fan_section - head_y0 + 1 - ci;   // 46.6
     difference() {
         union() {
+            // the frame round the fan, its sides stepping in 45 deg at the back
+            // to the duct's: square, that step would print as a 7 mm ledge
             difference() {
-                rounded_box_z(outer_width, outer_width, 0, head_depth, corner_r);
-                translate([-ci, -ci, -1]) cube([cavity, cavity, head_depth + 2]);
+                hull() {
+                    rounded_box_z(outer_width, outer_width, 0, fan_section - side_recess, corner_r);
+                    rounded_box_z(2*duct_x, outer_width, 0, fan_section, corner_r);
+                }
+                translate([-ci, -ci, -1]) cube([cavity, cavity, fan_section + 2]);
             }
-            gussets();
+            // the duct: sides and a top, standing on the base, whose roof is its
+            // floor. Its inside widens from the fan's cavity at 45 deg or less, so
+            // the frame's floor and top print without a 90 mm bridge.
+            difference() {
+                duct_outer(fan_section - 0.5, head_depth);
+                translate([-ci, -ci, fan_section - 1]) cube([cavity, cavity, 1.01]);
+                hull() {        // from the frame's rear face exactly, or the slope starts outside its wall
+                    translate([-ci, -ci, fan_section]) cube([cavity, cavity, 0.01]);
+                    translate([-duct_in_x, head_y0 - 1, duct_z0]) cube([2*duct_in_x, duct_in_y - head_y0 + 1, head_depth - duct_z0 + 1]);
+                }
+            }
+            columns();
+            rear_grille();
+            side_teeth();
         }
         cardinal_pilots(0, 1);
-        cardinal_pilots(head_depth, -1);
-        // bail pivot inserts
+        // the fan's bolts: M3 inserts in the columns' front faces
+        for (sx = [-1, 1], sy = [-1, 1])
+            translate([sx*mount_spacing/2, sy*mount_spacing/2, fan_z0 + fan_thickness - 0.1])
+                cylinder(d=m3_insert_d, h=m3_insert_depth + 0.1);
+        // bail pivot inserts, from the recess floor into the top columns
         for (sx = [-1, 1])
-            translate([sx*(outer_width/2 + 0.1), pivot_y, pivot_z])
-                rotate([0, -sx*90, 0]) cylinder(d=m4_insert_d, h=m4_insert_depth + 0.1);
+            translate([sx*(duct_x + tooth_h + 0.1), pivot_y, pivot_z])
+                rotate([0, -sx*90, 0]) cylinder(d=m4_insert_d, h=tooth_h + m4_insert_depth + 0.1);
         // head-to-base screws, countersunk into the cavity floor
         for (p = join_pts) translate([p[0], 0, p[1]]) {
             y_cyl(3.4, head_y0 - 1, outer_width/2 - ci + 2);
             y_cyl(3.4, -ci - 1.7, 1.8, 6.6);
         }
+        // ... and the two at the back: inserts in the bottom columns, from below
+        for (p = rear_join_pts)
+            translate([p[0], 0, p[1]]) y_cyl(m3_insert_d, head_y0 - 0.1, m3_insert_depth + 0.1);
         // fan cable down into the base, and the groove that leads it there
         translate([cable_slot[0], head_y0 - 1, cable_slot[2]])
             cube([cable_slot[1] - cable_slot[0], outer_width/2 - ci + 2, cable_slot[3] - cable_slot[2]]);
         translate([-ci - 0.1, 0, 0]) rotate([90, 0, 90]) linear_extrude(cavity + 0.2)
             polygon([[-ci + 0.1, cable_groove[0] - 0.1], [-ci - cable_groove_depth, cable_groove[0] + cable_groove_depth],
                      [-ci - cable_groove_depth, cable_groove[1]], [-ci + 0.1, cable_groove[1]]]);   // (Y, Z)
+        // the base's vents open into the duct; carry them through the 45 deg
+        // widening where it covers the front of them
+        for (v = vents) for (x = [v[0] : vent_pitch : v[1]])
+            translate([x - vent_w/2, head_y0 - 1, v[2]]) cube([vent_w, 13, v[3] - v[2]]);
     }
 }
 
@@ -298,6 +399,9 @@ module base() {
         // head-to-base inserts (from the top surface)
         for (p = join_pts)
             translate([p[0], 0, p[1]]) y_cyl(m3_insert_d, head_y0 - m3_insert_depth, m3_insert_depth + 0.1);
+        // the head's two rear screws come up through the roof from inside
+        for (p = rear_join_pts)
+            translate([p[0], 0, p[1]]) y_cyl(3.4, base_roof - 1, base_top_t + 2);
         // fan cable slot
         translate([cable_slot[0], base_roof - 1, cable_slot[2]])
             cube([cable_slot[1] - cable_slot[0], base_top_t + 2, cable_slot[3] - cable_slot[2]]);
@@ -486,11 +590,16 @@ module oled_keepout() {         // PCB + glass, seated on the posts
     oled_pcb_keepout();
     translate([pod_x - 26.7/2, pod_y - 19.3/2, oled_pcb_front]) cube([26.7, 19.3, oled_glass_t]);
 }
-module fan_bolts_keepout() {    // M3 x 30 bolts from the fan's front flange, and their nuts
+module fan_bolts_keepout() {    // M3 x 30 bolts from the fan's front flange into the column inserts
     for (sx = [-1, 1], sy = [-1, 1]) translate([sx*mount_spacing/2, sy*mount_spacing/2, 0]) {
         translate([0, 0, fan_z0 - 2]) cylinder(d=5.5, h=2);                 // pan head
         translate([0, 0, fan_z0]) cylinder(d=3, h=30);
-        translate([0, 0, fan_z0 + fan_thickness + ledge_under_nut]) cylinder(d=6.35, h=2.4, $fn=6);
+    }
+}
+module rear_screws_keepout() {  // the head's two rear M3 x 8 pan heads, inside the base, and their shanks
+    for (p = rear_join_pts) translate([p[0], 0, p[1]]) {
+        y_cyl(6, base_roof - 2.5, 2.5);
+        y_cyl(3, base_roof - 0.1, 8.1);
     }
 }
 

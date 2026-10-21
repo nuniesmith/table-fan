@@ -11,20 +11,21 @@ waits for the module, so its hole spacing can be measured first. Run
    | Test | Checks | Then |
    |------|--------|------|
    | `inserts` | 3 pilot sizes each for the M2, M3 and M4 heat-set inserts | Set `m2_insert_d`, `m3_insert_d`, `m4_insert_d` in `fan_housing.scad` to the size that went in straight and won't pull out |
-   | `fan_fit` | The head's rear 12 mm: the fan drops in and rests on the ledges, M3 bolts pass its corner holes, the nuts sit in their pockets, a faceplate screws on | Tight fan: raise `fan_clearance`. Up to ~1 mm of play is fine: the bolts locate the fan |
+   | `fan_fit` | The head round the fan's rear 6 mm, with the corner columns' front 8 mm: the fan drops in and rests on the columns, and M3 inserts go into their pilots so the M3 × 30 bolts reach them | Tight fan: raise `fan_clearance`. Up to ~1 mm of play is fine: the bolts locate the fan |
+   | `bail_joint` | One bail pivot: the head's corner with its teeth and M4 insert pilot, and an arm's pivot end. With the M4 insert in and an M4 × 16 screw, the teeth mesh every 15°, hold hand-tight, and swing when it's loosened about two turns | Teeth that skip under load: raise `tooth_h` to 1.0. Arm won't sit flush: check the insert went in flush |
    | `sled_end` | A cell slides in without force or rattle | Tight: raise `cell_gap` in `battery_sled.scad` |
    | `side_wall` | The dial pot's bushing, the knob recess, the charge socket and the button | Print it when those parts arrive (below) |
-2. **Head**, **two faceplates** and the **bail**: these depend only on the fan's standard size.
+2. **Head**, the **faceplate** and the **bail**, once `fan_fit` and `bail_joint` have passed: these depend only on the fan's standard size.
 3. **Sled + lid** and the **bottom plate**.
 4. **Base**. It depends on the pot, charge socket and button, so print `side_wall` with the real parts first. To print it sooner, check the WH138 against the listing (M7 bushing, 24 mm body) and plan to file the 13 × 10 socket opening if your socket differs.
 5. **OLED pod**: sized from the module's listing. Check that its mounting holes are 23.3 × 23.8 mm apart before printing; otherwise set `oled_hole_dx` / `oled_hole_dy` and re-slice.
 
 The knob is a backup only: the aluminium knob ships with the pot.
 
-**Filament**: about 410 g of PLA for the whole fan plus about 65 g of test prints, as sliced in the plate table below. One 1 kg spool covers it with room for a reprint.
+**Filament**: about 535 g of PLA for the whole fan plus about 80 g of test prints, as sliced in the plate table below. One 1 kg spool covers it, with room to reprint anything but the head.
 
 ## Ender-3 Neo, in PLA
-Seven plates, sliced from Creality's own Ender-3 Neo + Generic PLA profiles
+Nine plates, sliced from Creality's own Ender-3 Neo + Generic PLA profiles
 (`slicing/ender3-neo-pla.ini`, below). Every one fits the 220 × 220 bed, needs
 no supports, and starts by homing and probing the bed (`G28`, `G29`). Print
 them in number order:
@@ -32,16 +33,18 @@ them in number order:
 | # | Plate | Time | PLA |
 |---|-------|------|-----|
 | 01 | Test prints: inserts, sled end, side wall (with a brim: the wall piece stands up) | 4 h 09 | 33 g |
-| 02 | Test: fan fit, at draft settings (0.28 mm, 2 walls); it only checks fit | 2 h 44 | 32 g |
-| 03 | Head | 12 h 26 | 122 g |
-| 04 | Faceplate: **print twice**, front and rear | 5 h 27 each | 43 g each |
-| 05 | Bail + sled lid | 3 h 17 | 34 g |
+| 02 | Test: fan fit, at draft settings (0.28 mm, 2 walls); it only checks fit | 2 h 43 | 34 g |
+| 02b | Test: bail joint, at normal settings (the teeth are what it tests), with a brim | 1 h 25 | 12 g |
+| 03 | Head: the frame, duct, corner columns and rear grille in one | 28 h 09 | 267 g |
+| 04 | Faceplate, for the front | 5 h 28 | 43 g |
+| 05 | Bail + sled lid | 4 h 23 | 45 g |
 | 06 | Bottom plate + battery sled | 8 h 24 | 82 g |
-| 07 | Base | 9 h 20 | 90 g |
+| 07 | Base | 9 h 22 | 90 g |
 | 08 | OLED pod (check the module's holes first) | 1 h 05 | 7 g |
 
-About 51 hours and 480 g of PLA in all. Print 01 and 02 first, and check
-them before going on (see "Print order" above). If a test shows a fit is off,
+About 65 hours and 610 g of PLA in all. Print 01, 02 and 02b first, and
+check them before going on (see "Print order" above): the head alone is more
+than a day. If a test shows a fit is off,
 change the dimension and re-slice:
 
     python3 tools/slice.py --prusaslicer /path/to/prusa-slicer   # writes gcode/
@@ -76,21 +79,25 @@ Press them in straight with a soldering iron (about 180–200 °C for PLA) until
 
 | Where | Inserts |
 |-------|---------|
-| Head, front and rear faces (faceplates) | M2 × 8 |
-| Head, side walls (bail pivots) | M4 × 2 |
+| Head, front face (faceplate) | M2 × 4 |
+| Head, the corner columns' front faces, 28 mm into the cavity (fan) | M3 × 4 |
+| Head, underneath at the back (the rear head-to-base screws) | M3 × 2 |
+| Head, the side recesses (bail pivots) | M4 × 2 |
 | Base, top surface (head screws) | M3 × 4 |
 | Base, corner bosses underneath (bottom plate) | M3 × 4 |
 
 ## Order now
 Not in the Oct 17 order, or decided since. Skip what's already in your kits.
-- **Fixings**:
-  - heat-set inserts M2 ×8 / M3 ×8 / M4 ×2;
-  - M2 × 6 countersunk ×8 (faceplates);
-  - M3 × 30 ×4 with nuts and washers (fan);
-  - M3 × 16 countersunk ×4 (head to base);
+- **Fixings** (as of 2026-10-20's deeper head):
+  - heat-set inserts M2 ×4 / M3 ×14 / M4 ×2;
+  - M2 × 6 countersunk ×4 (faceplate);
+  - M3 × 30 ×4 (fan, into inserts: no nuts);
+  - M3 × 16 countersunk ×4 (head to base, front);
+  - M3 × 8 pan or button head ×2 (head to base, rear);
   - M3 × 8 countersunk ×4 (bottom plate);
-  - M4 × 12 ×2, plus 2 nylon and 2 steel washers (bail);
+  - **M4 × 16 knurled thumb screws ×2** (DIN 464), 2 steel washers and 2 M4 wave washers (bail);
   - M2 self-tapping screws, 5–10 mm, about 16.
+- No longer needed: the fan's M3 nuts, the bail's M4 × 12 and nylon washers, and four of the M2 inserts and screws (there's one faceplate now).
 - **Optional**: JST-XH 2.54 mm plugs (2-, 3- and 4-pin) for the dial, button and OLED leads, so the bottom plate can come right out (BUILD.md, the harness).
 - **Screen button**: 6 × 6 mm tactile switch, **8–9.5 mm tall**. It sits in a pocket in the wall, so a short one's stem won't reach out of it.
 - **Electronics**, from the electronics doc:

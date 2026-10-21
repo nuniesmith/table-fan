@@ -38,8 +38,9 @@ DRAFT = ["--layer-height", "0.28", "--perimeters", "2", "--top-solid-layers", "3
 PLATES = [
     ("01_test_prints", ["test_inserts", "test_sled_end", "test_side_wall"], ["--brim-width", "5"]),   # the wall piece stands tall
     ("02_test_fan_fit", ["test_fan_fit"], DRAFT),
+    ("02b_test_bail_joint", ["test_bail_joint"], ["--brim-width", "5"]),   # normal settings: the teeth are what it tests
     ("03_head", ["head"], []),
-    ("04_faceplate_PRINT_TWICE", ["faceplate"], []),
+    ("04_faceplate", ["faceplate"], []),          # the front one; the rear grille is part of the head
     ("05_bail_and_sled_lid", ["bail", "sled_lid"], []),
     ("06_bottom_plate_and_battery_sled", ["bottom_plate", "battery_sled"], []),
     ("07_base", ["base"], []),
@@ -108,9 +109,9 @@ def main():
             t = re.search(r"; estimated printing time \(normal mode\) = (.+)", text)
             g = re.search(r"; filament used \[g\] = ([\d.]+)", text)
             grams = float(g.group(1)) if g else 0.0
-            total_g += grams * (2 if "TWICE" in name else 1)
+            total_g += grams
             print(f"{name:36} {t.group(1) if t else '?':>12} {grams:7.1f}  {'; '.join(warnings(log)) or 'none'}")
-    print(f"\n{total_g:.0f} g of {material} in all (the faceplate twice). G-code in {out}")
+    print(f"\n{total_g:.0f} g of {material} in all. G-code in {out}")
     shutil.rmtree(tmp, ignore_errors=True)
     sys.exit(1 if failed else 0)
 

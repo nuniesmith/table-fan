@@ -1,6 +1,6 @@
-// The whole fan assembled: head, base, bottom plate, OLED pod, both
-// faceplates, bail, battery sled, knob, with the fan, cells and boards as
-// ghosts. For looking at, not for printing: export each part from its own
+// The whole fan assembled: head, base, bottom plate, OLED pod, the front
+// faceplate, bail, battery sled, knob, with the fan, cells, boards and the
+// bail's thumb screws as ghosts. For looking at, not for printing: export each part from its own
 // file (see README).
 
 include <bail.scad>
@@ -9,7 +9,7 @@ use <faceplate.scad>
 use <knob.scad>
 
 /* [View] */
-bail_angle = 0;                 // 0 = up (carry / hang); 157 = swung back onto the base
+bail_angle = 0;                 // 0 = up (carry / hang); 90 = folded back along the duct; 15 deg steps
 show_faceplates = true;
 view = "full";                  // [full, cutaway, base_layout]: cutaway slices off the -X half;
                                 // base_layout shows the base below its roof, from above
@@ -21,10 +21,7 @@ module assembled() {
     color("SlateGray") bottom_plate();
     color("SteelBlue") oled_pod();
     color("Orange") bail_at(bail_angle);
-    if (show_faceplates) color("DimGray") {
-        mirror([0, 0, 1]) faceplate();
-        translate([0, 0, head_depth]) faceplate();
-    }
+    if (show_faceplates) color("DimGray") mirror([0, 0, 1]) faceplate();
     color("Peru") sled_placed();
     color("Black") translate([outer_width/2 + 1.5, pot_y, pot_z]) rotate([0, 90, 0]) knob();
     // bought parts
@@ -34,6 +31,8 @@ module assembled() {
     color("RoyalBlue") { charger_keepout(); buck1_keepout(); buck2_keepout(); }
     color("Purple") carrier_keepout();
     color("Gold") { pot_keepout(); usb_socket_keepout(); button_keepout(); }
+    color("Silver") both_sides()       // M4 x 16 knurled thumb screws, on a washer
+        translate([arm_x1, pivot_y, pivot_z]) rotate([0, 90, 0]) { cylinder(d=9, h=1); translate([0, 0, 1]) cylinder(d=12, h=6); }
     color("Black") oled_keepout();
 }
 

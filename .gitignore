@@ -3,3 +3,7 @@ stl/
 # G-code written by tools/slice.py
 gcode/
 __pycache__/
+# tscircuit install, cache and build output (electronics/pcb: npm install, npm run build)
+node_modules
+electronics/pcb/dist/
+electronics/pcb/.tscircuit/

@@ -1,0 +1,14 @@
+{
+  "name": "table-fan-carrier-psu",
+  "private": true,
+  "description": "Carrier + PSU board for the table fan: tscircuit source, pinned so the Gerbers rebuild identically",
+  "scripts": {
+    "build": "tsci build carrier-psu.tsx --disable-parts-engine",
+    "place": "tsci build carrier-psu.tsx --disable-parts-engine --routing-disabled",
+    "gerbers": "tsci export carrier-psu.tsx -f gerbers -o dist/gerbers.zip --disable-parts-engine && cd gerber && unzip -o -q ../dist/gerbers.zip",
+    "assembly": "tsci export carrier-psu.tsx -f assembly-svg -o assembly.svg --disable-parts-engine"
+  },
+  "devDependencies": {
+    "tscircuit": "0.0.3003"
+  }
+}

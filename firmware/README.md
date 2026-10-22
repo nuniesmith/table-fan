@@ -74,9 +74,10 @@ and `ssd1306.py` to the Zero via Thonny (it runs on boot).
 8. Charger status: before wiring GP13, measure the module's status pin to
    ground while charging, when full, **and with the USB unplugged**. If it
    ever exceeds 3.3 V, wire it through 10k plus a clamp diode to 3V3, or an
-   optocoupler. Set `CHARGER_ACTIVE_LOW` from what you measured, then check
-   that the screen does not show CHARGING with the USB unplugged: an
-   unpowered module can pull its pin low.
+   optocoupler. (On the carrier + PSU board the 10k is fitted; the clamp is
+   D_CLAMP, see `electronics/pcb/README.md`.) Set `CHARGER_ACTIVE_LOW` from
+   what you measured, then check that the screen does not show CHARGING
+   with the USB unplugged: an unpowered module can pull its pin low.
 
 ## Tuning
 

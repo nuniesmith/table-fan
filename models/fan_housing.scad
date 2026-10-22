@@ -16,9 +16,9 @@
 //          bail's arms on each side, so the folded bail finishes flush.
 //   Base : under the head, front to back, open at the bottom (a bottom
 //          plate closes it). Holds the 4S pack in models/battery_sled.scad
-//          (four cells side by side, axes front to back) with the BMS on the
-//          sled's lid, plus the charger, both MP1584 bucks and the Zero
-//          carrier.
+//          (four cells side by side, axes front to back) with the BMS and
+//          the charger on the sled's lid, and beside it the carrier + PSU
+//          board (electronics/pcb): the Zero and both 12 V / 5 V bucks.
 //   +X base wall   : dial pot (speed + hard power), USB-C charge port,
 //                    screen button
 //   Rear base wall : Zero USB-C (programming port) cutout + collar, OLED pod
@@ -37,6 +37,7 @@
 
 include <battery_sled.scad>
 sled_part = "none";             // only the sled's dimensions are needed here
+include <carrier_pcb.scad>      // the board's outline, holes and parts: written by tools/check_pcb.py
 use <faceplate.scad>            // its grille pattern is the head's rear grille
 
 /* [Head] */
@@ -138,21 +139,22 @@ btn_pocket_depth = 3.6;         // the switch body's height
 btn_floor = 2.4;
 btn_leg_pitch = 4.5;            // between the two rows of legs
 
-// Vent slots in the base's top, behind the front frame, over the charger and
-// the 12 V buck. They carry on through the duct's floor, so the fan draws air
-// up past those boards. (X0, X1, Z0, Z1; slots run along Z)
+// Vent slots in the base's top, behind the front frame, over the carrier
+// board and the charger. They carry on through the duct's floor, so the fan
+// draws air up past them. (X0, X1, Z0, Z1; slots run along Z)
 vents = [[20, 42, 42, 62], [-12, 4, 48, 68]];
 vent_w = 2;
 vent_pitch = 5;
 
-/* [Zero carrier (on the bottom plate)] */
-carrier_size = [25, 30];        // X, Z perfboard; the Zero's USB-C at its rear edge
-carrier_x0 = 25;
-carrier_z0 = 66.5;
-carrier_boss_h = 5;
-carrier_hole_dx = 21;           // M2 holes, drilled through the perfboard
-carrier_hole_dz = 26;
+/* [Carrier + PSU board (on the bottom plate)] */
+// The board is electronics/pcb/carrier-psu.tsx. Its outline, M2 holes and
+// parts are in carrier_pcb.scad, generated from its build, so the plate's
+// bosses always sit under the board's holes.
+carrier_boss_h = 5;             // the plate's bosses: the board's underside
+carrier_boss_d = 5;
+zero_usb_x = 37.5;              // the Zero's USB-C, and the rear wall's cutout for it
 zero_usb_open = [12.5, 7.5];    // X, Y: room for the plug's overmould
+plate_vents = [21, 41, 33, 62]; // X of the first and last slot (5 apart), Z0, Z1: under the board
 
 /* [OLED pod] */
 // 0.96" SSD1306 module, from its listing: 27.3 x 27.8 mm PCB, 21.74 x 10.86 mm
@@ -190,8 +192,7 @@ duct_in_y = outer_width/2 - duct_wall;          // 67.6
 in_x = outer_width/2 - base_wall;               // 67.5
 in_z0 = base_wall;
 in_z1 = base_depth - base_wall;
-zero_usb_x = carrier_x0 + carrier_size[0]/2;
-zero_usb_y = base_floor + carrier_boss_h + 1.6 + 1.0 + 1.6;   // boss + perfboard + Zero + half the receptacle
+zero_usb_y = base_floor + carrier_boss_h + carrier_pcb_t + 1.0 + 1.6;   // boss + board + Zero + half the receptacle
 pod_w = oled_pcb[0] + 2 + 2*pod_wall;
 pod_h = oled_pcb[1] + 2 + 2*pod_wall;
 lid_top = base_floor + sled_h + lid_t;
@@ -441,8 +442,9 @@ module base() {
 
 // ---------- Bottom plate ----------
 // Zip-tie bridges: wiring tied down near the joints survives a truck.
-// (X, Z, 1 = the tie runs along Z)
-tie_pts = [[55, 77, 0], [21, 75, 0], [6, 93, 1]];
+// (X, Z, 1 = the tie runs along Z.) The carrier board covers the plate from
+// X 18 to 58.5; its wires plug into latching connectors on it.
+tie_pts = [[6, 93, 1]];
 
 module tie_bridge(x, z, along_z) {
     translate([x, 0, z]) rotate([0, along_z ? 90 : 0, 0])
@@ -460,10 +462,9 @@ module bottom_plate() {
     difference() {
         union() {
             rounded_box_y(outer_width, base_depth, base_bottom, base_floor, corner_r);
-            // Zero carrier bosses
-            for (dx = [-1, 1], dz = [-1, 1])
-                translate([zero_usb_x + dx*carrier_hole_dx/2, 0, carrier_z0 + carrier_size[1]/2 + dz*carrier_hole_dz/2])
-                    y_cyl(5, base_floor - 0.5, carrier_boss_h + 0.5);
+            // the carrier board's bosses
+            for (h = carrier_pcb_holes)
+                translate([h[0], 0, h[1]]) y_cyl(carrier_boss_d, base_floor - 0.5, carrier_boss_h + 0.5);
             for (t = tie_pts) tie_bridge(t[0], t[1], t[2]);
         }
         // M3 countersunk screws into the base's corner bosses
@@ -480,13 +481,12 @@ module bottom_plate() {
                 y_cyl(2.4, base_bottom - 1, plate_t + 2);
                 y_cyl(4.6, base_bottom - 0.1, 1.2, 2.2);
             }
-        // carrier boss pilots (M2 self-tapping)
-        for (dx = [-1, 1], dz = [-1, 1])
-            translate([zero_usb_x + dx*carrier_hole_dx/2, 0, carrier_z0 + carrier_size[1]/2 + dz*carrier_hole_dz/2])
-                y_cyl(1.7, base_floor - 1.5, carrier_boss_h + 2);
-        // vent slots under the charger
-        for (x = [21 : 5 : 41])
-            translate([x - 1, base_bottom - 1, charger_pos[1] + 3]) cube([2, plate_t + 2, charger_size[2] - 6]);
+        // board boss pilots (M2 self-tapping)
+        for (h = carrier_pcb_holes)
+            translate([h[0], 0, h[1]]) y_cyl(1.7, base_floor - 1.5, carrier_boss_h + 2);
+        // vent slots under the board's 12 V buck
+        for (x = [plate_vents[0] : 5 : plate_vents[1]])
+            translate([x - 1, base_bottom - 1, plate_vents[2]]) cube([2, plate_t + 2, plate_vents[3] - plate_vents[2]]);
         // recesses for stick-on feet
         for (sx = [-1, 1], z = [16, 84])
             translate([sx*55, 0, z]) y_cyl(12, base_bottom - 0.1, 1.1);
@@ -529,11 +529,8 @@ module oled_pod() {
 // models/checks.scad. Board sizes are typical listings: measure yours.
 bms_size = [46, 8, 60];         // X, Y (incl. balance header), Z; on the sled lid
 charger_size = [25, 8, 35];     // 4S Type-C boost charger
-buck_size = [17, 5, 22];        // MP1584 mini
 bms_pos = [sled_x0 + 3, sled_z0 + 8];          // X0, Z0 on the lid
-buck2_pos = [sled_x0 + 55, sled_z0 + 40];      // 12 V buck, on the lid beside the BMS
-charger_pos = [18, 30];                         // on the plate, behind the head under the vents
-buck1_pos = [22, 4];                            // 5 V buck, on the plate, under the head
+charger_pos = [sled_x0 + 55, sled_z0 + 29];    // on the lid beside the BMS, under the roof's vents
 
 module fan_keepout() {
     translate([-fan_size/2, -fan_size/2, fan_z0]) cube([fan_size, fan_size, fan_thickness]);
@@ -541,14 +538,19 @@ module fan_keepout() {
 module cells_keepout() { translate([sled_x0, base_floor, sled_z0]) cells(); }
 module sled_placed() { translate([sled_x0, base_floor, sled_z0]) { sled(); sled_lid(); } }
 module bms_keepout() { translate([bms_pos[0], lid_top, bms_pos[1]]) cube(bms_size); }
-module buck2_keepout() { translate([buck2_pos[0], lid_top, buck2_pos[1]]) cube(buck_size); }
-module charger_keepout() { translate([charger_pos[0], base_floor, charger_pos[1]]) cube(charger_size); }
-module buck1_keepout() { translate([buck1_pos[0], base_floor, buck1_pos[1]]) cube(buck_size); }
-// perfboard + Zero + fan header, on the plate bosses; the USB-C sticks out 0.5 at the back
-module carrier_keepout() {
-    translate([carrier_x0, base_floor + carrier_boss_h, carrier_z0])
-        cube([carrier_size[0], 12.5, carrier_size[1] + 0.5]);
+module charger_keepout() { translate([charger_pos[0], lid_top, charger_pos[1]]) cube(charger_size); }
+// the carrier board on its bosses, and every part on it to its height
+// (mated plugs and wire bends included); the Zero's USB-C sticks out 0.5 at the back
+module carrier_pcb_board() {
+    translate([0, base_floor + carrier_boss_h + carrier_pcb_t, 0]) rotate([90, 0, 0])
+        linear_extrude(carrier_pcb_t) polygon(carrier_pcb_outline);
 }
+module carrier_pcb_parts() {
+    for (q = carrier_pcb_parts)
+        translate([q[0], base_floor + carrier_boss_h + carrier_pcb_t, q[1]])
+            cube([q[2] - q[0], q[4], q[3] - q[1] + (q[5] == "U1" ? 0.5 : 0)]);
+}
+module carrier_pcb_keepout() { carrier_pcb_board(); carrier_pcb_parts(); }
 module pot_keepout() {          // body + switch + terminals, and the bushing through the wall
     translate([in_x - pot_boss_t - pot_body_depth, pot_y, pot_z]) rotate([0, 90, 0])
         cylinder(d=pot_body_d + 2, h=pot_body_depth);

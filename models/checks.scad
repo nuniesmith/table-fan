@@ -26,8 +26,8 @@ module bail_obstacles() {
 }
 
 module board_keepouts() {
-    bms_keepout(); buck2_keepout(); charger_keepout(); buck1_keepout();
-    carrier_keepout(); pot_keepout(); usb_socket_keepout(); button_keepout();
+    bms_keepout(); charger_keepout(); carrier_pcb_keepout();
+    pot_keepout(); usb_socket_keepout(); button_keepout();
     rear_screws_keepout();
 }
 
@@ -81,9 +81,11 @@ if (check == "fan_vs_head") {                   // review: the mezzanine and the
 } else if (check == "boards_vs_body") {
     intersection() { board_keepouts(); union() { base(); bottom_plate(); head(); } }
 } else if (check == "boards_vs_each_other") {   // includes the pot against the fan, cells and sled
-    ko = ["bms", "buck2", "charger", "buck1", "carrier", "pot", "usb", "button", "sled", "fan", "rear_screws"];
+    ko = ["bms", "charger", "pcb", "pot", "usb", "button", "sled", "fan", "rear_screws"];
     for (i = [0 : len(ko) - 2], j = [i + 1 : len(ko) - 1])
         intersection() { keepout(ko[i]); keepout(ko[j]); }
+} else if (check == "pcb_on_bosses") {         // touch: the carrier board bears on the plate's bosses
+    intersection() { translate([0, -0.2, 0]) carrier_pcb_board(); bottom_plate(); }
 } else if (check == "openings") {               // review: the USB-C and button holes were blind
     intersection() { openings_keepout(); union() { head(); base(); bottom_plate(); oled_pod(); } }
 } else if (check == "bail_sweep") {             // review: the bail collided at every angle
@@ -127,10 +129,8 @@ if (check == "fan_vs_head") {                   // review: the mezzanine and the
 
 module keepout(name) {
     if (name == "bms") bms_keepout();
-    else if (name == "buck2") buck2_keepout();
     else if (name == "charger") charger_keepout();
-    else if (name == "buck1") buck1_keepout();
-    else if (name == "carrier") carrier_keepout();
+    else if (name == "pcb") carrier_pcb_keepout();
     else if (name == "pot") pot_keepout();
     else if (name == "usb") usb_socket_keepout();
     else if (name == "button") button_keepout();

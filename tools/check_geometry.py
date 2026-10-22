@@ -40,8 +40,9 @@ CHECKS = [
     ("fan_bolts", "clear", "the fan bolts reach their inserts in the columns"),
     ("cells_vs_sled", "clear", "four 18650s fit the sled"),
     ("sled_vs_body", "clear", "the sled fits the base"),
-    ("boards_vs_body", "clear", "BMS, charger, bucks, carrier, pot, USB-C, button and the rear screws fit the base"),
-    ("boards_vs_each_other", "clear", "those parts, the sled and the fan don't overlap (pot vs fan included)"),
+    ("boards_vs_body", "clear", "BMS, charger, carrier board (each part to its height), pot, USB-C, button and the rear screws fit the base"),
+    ("boards_vs_each_other", "clear", "those parts, the sled and the fan don't overlap (pot vs fan and board included)"),
+    ("pcb_on_bosses", "touch", "the carrier board bears on the plate's bosses"),
     ("openings", "clear", "USB-C, button, Zero plug, fan cable (slot + floor groove) and vents are open"),
     ("bail_sweep", "clear", "loosened, the bail swings from up to folded without hitting anything"),
     ("bail_detents", "clear", "at every 15 deg step the bail's teeth mesh with the wall's"),
@@ -65,8 +66,9 @@ MUTATIONS = {
     "fan_bolts": {"m3_insert_depth": "3"},              # bolt tails into the columns past the pilots
     "cells_vs_sled": {"cell_gap": "-1"},                # pockets smaller than the cells
     "sled_vs_body": {"sled_z0": "5"},                   # sled into the front bosses
-    "boards_vs_body": {"charger_pos": "[50, 4]"},       # charger into the pot and a boss
-    "boards_vs_each_other": {"buck1_pos": "[22, 30]"},  # buck onto the charger
+    "boards_vs_body": {"charger_pos": "[50, 4]"},       # charger out through the +X wall
+    "boards_vs_each_other": {"charger_pos": "[-40, 30]"},  # charger onto the BMS
+    "pcb_on_bosses": {"carrier_boss_d": "0.01"},        # no bosses under the board
     "openings": {"cable_groove_depth": "1"},            # cable groove too shallow for the cable
     "bail_sweep": {"bail_len": "50"},                   # bar hits the head's top rear edge
     "bail_detents": {"tooth_n": "23"},                  # teeth out of step with 15 deg

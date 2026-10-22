@@ -28,8 +28,9 @@ module assembled() {
     color("Gainsboro", 0.5) fan_keepout();
     color("Teal") cells_keepout();
     color("Green") bms_keepout();
-    color("RoyalBlue") { charger_keepout(); buck1_keepout(); buck2_keepout(); }
-    color("Purple") carrier_keepout();
+    color("RoyalBlue") charger_keepout();
+    color("DarkGreen") carrier_pcb_board();
+    color("MediumPurple") carrier_pcb_parts();
     color("Gold") { pot_keepout(); usb_socket_keepout(); button_keepout(); }
     color("Silver") both_sides()       // M4 x 16 knurled thumb screws, on a washer
         translate([arm_x1, pivot_y, pivot_z]) rotate([0, 90, 0]) { cylinder(d=9, h=1); translate([0, 0, 1]) cylinder(d=12, h=6); }

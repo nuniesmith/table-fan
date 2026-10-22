@@ -16,7 +16,7 @@ waits for the module, so its hole spacing can be measured first. Run
    | `sled_end` | A cell slides in without force or rattle | Tight: raise `cell_gap` in `battery_sled.scad` |
    | `side_wall` | The dial pot's bushing, the knob recess, the charge socket and the button | Print it when those parts arrive (below) |
 2. **Head**, the **faceplate** and the **bail**, once `fan_fit` and `bail_joint` have passed: these depend only on the fan's standard size.
-3. **Sled + lid** and the **bottom plate**.
+3. **Sled + lid** and the **bottom plate**. The plate now has 8 bosses for the carrier + PSU board. If you printed it before, with 4 bosses for the old perfboard, reprint it (the sled hasn't changed).
 4. **Base**. It depends on the pot, charge socket and button, so print `side_wall` with the real parts first. To print it sooner, check the WH138 against the listing (M7 bushing, 24 mm body) and plan to file the 13 × 10 socket opening if your socket differs.
 5. **OLED pod**: sized from the module's listing. Check that its mounting holes are 23.3 × 23.8 mm apart before printing; otherwise set `oled_hole_dx` / `oled_hole_dy` and re-slice.
 
@@ -96,17 +96,15 @@ Not in the Oct 17 order, or decided since. Skip what's already in your kits.
   - M3 × 8 pan or button head ×2 (head to base, rear);
   - M3 × 8 countersunk ×4 (bottom plate);
   - **M4 × 16 knurled thumb screws ×2** (DIN 464), 2 steel washers and 2 M4 wave washers (bail);
-  - M2 self-tapping screws, 5–10 mm, about 16.
-- No longer needed: the fan's M3 nuts, the bail's M4 × 12 and nylon washers, and four of the M2 inserts and screws (there's one faceplate now).
-- **Optional**: JST-XH 2.54 mm plugs (2-, 3- and 4-pin) for the dial, button and OLED leads, so the bottom plate can come right out (BUILD.md, the harness).
+  - M2 self-tapping screws, 5–10 mm, about 20, of which 8 are M2 × 6 for the board.
+- No longer needed: the fan's M3 nuts, the bail's M4 × 12 and nylon washers, and four of the M2 inserts and screws (there's one faceplate now). Nor, in the fan, the perfboard, the MP1584 mini modules and the 1N5819s: keep the minis as bench spares.
+- **The carrier + PSU board**: 5 from JLCPCB or PCBWay, from `electronics/pcb/gerber/` zipped (2 layers, 1.6 mm, 1 oz). Its parts from LCSC, from the BOM in [electronics/pcb/README.md](../electronics/pcb/README.md). The 52.3k has no confirmed LCSC number: any 0805 1 % 52.3k works.
+- **JST XH plugs** (2.50 mm) for the board's signal headers: XHP-2 ×3, XHP-3 and XHP-4 housings with SXH crimps, or pre-crimped XH leads (BUILD.md, the harness).
 - **Screen button**: 6 × 6 mm tactile switch, **8–9.5 mm tall**. It sits in a pocket in the wall, so a short one's stem won't reach out of it.
 - **Electronics**, from the electronics doc:
   - 2 A fuse + inline holder (or a 1.5 A PTC);
-  - a **22k** resistor (in most E12 kits);
-  - 100 nF and 1 nF ceramic capacitors;
   - 5.1k × 2, if the USB-C socket has no CC pull-downs;
-  - an SS14 Schottky, if the Zero's 5V pin is VBUS;
-  - 10k + 1N4148, or a PC817, if the charger's status pin measures over 3.3 V.
+  - on the board, from its BOM: the battery divider, the tach filter, the SS14, the status pin's 10k, and a 1N4148WS clamp to fit only if the charger's status pin measures over 3.3 V.
 - **Cells**: tabbed cells, or nickel strip and a spot welder (a handheld one is fine). Never solder to a cell.
 - **Misc**:
   - plastic-safe threadlocker (e.g. Vibra-TITE VC-3);

@@ -3,6 +3,7 @@
 From printed parts to a running fan, in order. The details live elsewhere; this guide is the sequence:
 - printing: [PRINTING.md](PRINTING.md);
 - wiring and safety: [the electronics doc](../electronics/ELECTRONICS_BOM_AND_WIRING.md);
+- the carrier + PSU board: [its README](../electronics/pcb/README.md);
 - firmware: [firmware/README.md](../firmware/README.md).
 
 Two parts are still waiting on what arrives:
@@ -11,12 +12,14 @@ Two parts are still waiting on what arrives:
 
 ## 0. Have ready
 - **Printed:** head, faceplate, bail, base, bottom plate, battery sled and lid (PLA), and later the OLED pod.
-- **Hardware:** the fixings list in PRINTING.md ("Order now").
+- **Hardware:** the list in PRINTING.md ("Order now"): the fixings, the board and its parts, the JST XH plugs.
 - **Tools:**
   - soldering iron with a heat-set insert tip;
+  - a fine tip and flux, or hot air, for the board's MP1584 chips;
   - multimeter;
-  - bench power supply (for setting the bucks);
+  - a current-limited bench power supply, for the board test;
   - wire strippers, side cutters, heat-shrink, isopropyl;
+  - a JST XH crimper, unless you use pre-crimped leads;
   - a spot welder if your cells have no tabs.
 - **Wire:** 18 AWG red/black for power; 26 AWG in several colours for signals.
 
@@ -34,18 +37,13 @@ Two parts are still waiting on what arrives:
 - [ ] Faceplate on the front: M2 × 6 into the inserts. (The rear grille is part of the head.)
 
 ## 3. Electronics on the bench
-### 3a. Set the bucks first
-- [ ] On the bench supply at about 15 V, with nothing on their outputs, set one MP1584 to **12.0 V** and one to **5.0 V**. Mark them "12" and "5".
+### 3a. The board
+- [ ] Solder it up as [its README](../electronics/pcb/README.md) says ("Assembly"): the MP1584s first, the through-hole connectors last, each header checked against its mated plug's pin 1 before soldering (they fit either way round). The designators aren't on the board: [`assembly.png`](../electronics/pcb/assembly.png) is the map.
+- [ ] D_CLAMP, the 1N4148WS: fit it only if the charger's status pin measured over 3.3 V.
+- [ ] Test it before anything is plugged in (J2–J7 empty): the bench supply on J1 at 12–16.8 V, limited to 100 mA. Against TP_GND, TP_12V should read 11.8–12.0 V, TP_5V about 4.6–4.8 V and TP_3V3 3.3 V. Idle current is tens of mA. The outputs are set by resistors: there is nothing to adjust.
 
-### 3b. The Zero carrier (perfboard, about 25 × 30 mm)
-- [ ] Solder the Zero onto the perfboard by its castellated edges, with its USB-C at one short edge: that edge goes to the base's rear cutout.
-- [ ] Fit the parts:
-  - the battery divider: 100k from the VCC pad to GP26, 22k from GP26 to GND, 100 nF from GP26 to GND;
-  - the tach pull-up: 10k from GP14 to 3V3, 1 nF from GP14 to GND;
-  - the fan header, from the cut extension cable: GND, +12 V, tach → GP14, PWM → GP15;
-  - if the charger's status pin measured over 3.3 V: 10k + a 1N4148 clamp on GP13.
-- [ ] Leave solder pads for the incoming wires (the cut list below).
-- [ ] Drill the 4 corner holes to 2.2 mm, 21 × 26 mm apart, to match the bosses on the bottom plate.
+### 3b. The board on the plate
+- [ ] It needs no drilling: lay it on the bottom plate, and its 8 holes sit on the plate's 8 bosses, with the Zero's USB-C at the rear edge. A plate with 4 bosses was printed for the old perfboard: reprint it (PRINTING.md, plate 06).
 
 ### 3c. The battery pack
 - [ ] Check each cell reads 3.0–4.2 V, all four within 0.02 V of each other.
@@ -58,29 +56,25 @@ Two parts are still waiting on what arrives:
 - [ ] BMS on the lid (foam tape). Connect **B− first, then B1, B2, B3, B+**, and check the BMS output reads the pack voltage.
 
 ### 3d. The harness
-Cut every wire below to length, label both ends, and heat-shrink every joint. Lengths come from the 3D layout, with 20 % extra and 30 mm for the ends. Wires from the plate to a wall part include a **100 mm service loop**, so the plate can be lowered beside the base with everything still connected.
+Cut every wire below to length, label both ends, and heat-shrink every soldered joint. Nothing is spliced: at the board, each lead ends in a plug or in J1's screw terminal (below). Lengths come from the 3D layout, with 20 % extra and 30 mm for the ends. Wires from the plate to a wall part include a **100 mm service loop**, so the plate can be lowered beside the base with everything still connected.
 
 | Wire | From → to | Gauge / colour | Cut |
 |------|-----------|----------------|-----|
 | Pack − | cell 1 → BMS B− | 18 black | 80 mm |
 | Pack + | cell 4 → BMS B+ | 18 red | 120 mm |
 | Switched supply in | BMS P+ → **2 A fuse holder** → dial switch | 18 red | 250 mm (fuse inline) |
-| Switched supply out | dial switch → VCC splice by the 5 V buck | 18 red | 180 mm |
-| VCC | splice → 12 V buck in | 18 red | 150 mm |
-| VCC sense | splice → carrier (divider top) | 26 red | 130 mm |
-| Ground star | BMS P− → ground splice | 18 black | 90 mm |
-| Ground | splice → 5 V buck / 12 V buck / carrier | 18 black | 140 / 80 / 170 mm |
-| Charge in | charge socket → charger in (2 wires) | 18 red + black | 160 mm |
-| Charge out | charger out → BMS (P+/P− if common-port) (2) | 18 red + black | 160 mm |
-| Charger status | charger STAT → carrier GP13 | 26 | 90 mm |
-| 12 V | 12 V buck out → 1N5819 → fan header + | 26 yellow | 120 mm |
-| 5 V | 5 V buck out → (Schottky) → Zero 5V | 26 orange | 130 mm |
-| Dial | pot ends + wiper → 3V3 / GND / GP27 (3) | 26 | 220 mm |
-| Button | button → GP11 / GND (2) | 26 | 190 mm |
-| OLED | header GND, VCC, SCL, SDA → GND, 3V3, GP1, GP0 (4) | 26 | 240 mm |
-| Fan | the fan's own cable → carrier header | (fan cable) | about 260 mm needed; if short, use the cut extension's other half |
+| Switched supply out | dial switch → J1 + | 18 red | 150 mm |
+| Ground | BMS P− → J1 − | 18 black | 140 mm |
+| Charge in | charge socket → charger in (2 wires) | 18 red + black | 210 mm |
+| Charge out | charger out → BMS (P+/P− if common-port) (2) | 18 red + black | 80 mm |
+| Charger status | charger STAT + GND → J6 (XH-2) | 26 | 90 mm |
+| Dial | pot lugs → J3 (XH-3): the ends to pins 1 and 3, the wiper to 2 | 26 | 210 mm |
+| Button | button → J5 (XH-2) | 26 | 150 mm |
+| OLED | module GND, VCC, SCL, SDA → J4 (XH-4) pins 1–4 | 26 | 210 mm |
+| Fan | the fan's own cable → J2 | (fan cable) | about 170 mm needed from the fan's corner; if short, a 4-pin fan extension |
+| Bench (bench only) | MT3608 out → J7 (XH-2) | 26 | as convenient |
 
-Optional: JST-XH plugs on the dial, button and OLED leads, which are 26 AWG, would let the plate come right out. Keep the 18 AWG power leads soldered: JST-XH only takes 22 AWG and thinner, and soldered joints survive vibration best.
+The 26 AWG signal leads plug into the board's JST XH headers: crimp XH plugs onto them (XHP housings, SXH crimps), or use pre-crimped XH leads. Check each plug's pin-1 wire against the triangle on the board. XH only takes 22–28 AWG, so the 18 AWG power leads go into J1's screw terminal instead: twisted strands, not a tinned end, which loosens under the screw.
 
 ## 4. Into the base
 Turn the base upside down on a soft cloth.
@@ -91,13 +85,12 @@ Turn the base upside down on a soft cloth.
   - **OLED pod**: screw the module to its posts first, then the pod onto the rear wall with 2× M2 × 10.
 - [ ] Bottom-plate parts:
   - the sled: 2× M2 × 8 up through the plate;
-  - the charger and the 5 V buck: foam tape, at the places in the layout;
-  - the carrier: 4× M2 × 6, its USB-C at the rear wall;
-  - the 12 V buck: on the lid beside the BMS.
-- [ ] Connect the wall parts' leads to the plate side. Zip-tie each bundle to the three tie bridges, with a dab of glue at the Zero's castellated pads.
+  - the charger: on the sled's lid beside the BMS, foam tape;
+  - the board: 8× M2 × 6 into the plate's bosses, its USB-C at the rear wall.
+- [ ] Lead the wiring to the board, the dial OFF, but don't connect it yet: the first power-up (below) connects J1, then the plugs, in order. Zip-tie the wiring to the tie bridge behind the sled: the plugs latch, so it needs only the one.
 
 ## 5. First power-up
-Plate still beside the base, the dial OFF. Follow **"First power-up, in this order"** in the electronics doc: bucks first, then pack, fuse, switch, Zero, and the fan last.
+Plate still beside the base, the dial OFF. Follow **"First power-up, in this order"** in the electronics doc: the board test (done in 3a), then pack, fuse and switch with J2–J7 unplugged, the Zero, and the fan last.
 
 ## 6. Firmware and calibration
 - [ ] Flash MicroPython to the Zero (hold BOOT, plug in USB, copy the UF2), then copy `main.py`, `fanlogic.py`, `ssd1306.py` with Thonny.

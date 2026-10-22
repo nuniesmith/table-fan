@@ -484,7 +484,7 @@ module bottom_plate() {
         // board boss pilots (M2 self-tapping)
         for (h = carrier_pcb_holes)
             translate([h[0], 0, h[1]]) y_cyl(1.7, base_floor - 1.5, carrier_boss_h + 2);
-        // vent slots under the board's bucks
+        // vent slots under the board's 12 V buck
         for (x = [plate_vents[0] : 5 : plate_vents[1]])
             translate([x - 1, base_bottom - 1, plate_vents[2]]) cube([2, plate_t + 2, plate_vents[3] - plate_vents[2]]);
         // recesses for stick-on feet
@@ -530,7 +530,7 @@ module oled_pod() {
 bms_size = [46, 8, 60];         // X, Y (incl. balance header), Z; on the sled lid
 charger_size = [25, 8, 35];     // 4S Type-C boost charger
 bms_pos = [sled_x0 + 3, sled_z0 + 8];          // X0, Z0 on the lid
-charger_pos = [sled_x0 + 53, sled_z0 + 29];    // on the lid beside the BMS, under the roof's vents
+charger_pos = [sled_x0 + 55, sled_z0 + 29];    // on the lid beside the BMS, under the roof's vents
 
 module fan_keepout() {
     translate([-fan_size/2, -fan_size/2, fan_z0]) cube([fan_size, fan_size, fan_thickness]);

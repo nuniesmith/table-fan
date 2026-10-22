@@ -36,7 +36,7 @@ const Label = (p: {text: string; x: number; y: number; rot?: number}) => (
   <silkscreentext text={p.text} pcbX={p.x} pcbY={p.y} pcbRotation={p.rot ?? 0} fontSize={1.7} />
 )
 // Reference designators stay off the silk (too small to print legibly at
-// this density); assembly.svg shows them instead.
+// this density); assembly.png shows them instead.
 const NOREF = {silkscreenTextVisibility: "hidden" as const}
 
 // --- RP2040-Zero ------------------------------------------------------------

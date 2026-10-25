@@ -1,9 +1,12 @@
 // ---------------------------------------------------------------------------
-// Table Fan — Carrier + PSU board v2
+// Table Fan — Carrier + PSU board v2.1
 // Replaces the perfboard carrier AND both MP1584 mini buck modules.
-// 2-layer, 1.6 mm FR4. Local coords: +X = base +X (dial side), +Y = rear
-// (Zero USB-C end). Base coords -> board local: x = X_base - 42, y = Z_base - 50
-// (tools/check_pcb.py uses the same offset).
+// 2-layer, 1.6 mm FR4, parts on top. Local coords are the board seen from its
+// top, which is the base seen from above with its rear wall up: +x = base -X
+// (toward the sled), +y = rear (Zero USB-C end). Base coords -> board local:
+// x = 42 - X_base, y = Z_base - 50 (tools/check_pcb.py uses the same map and
+// checks that it is a turn, not a mirror). v2 mapped +x to +X, which mirrored
+// the board: v2.1 is v2 mirrored back, with every part the right way up.
 //
 // The outline is the base's free floor (models/fan_housing.scad): clear of the
 // battery sled (X 17), the +X corner bosses (X >= 59.5 at the front and back)
@@ -31,9 +34,11 @@ const Tri = (p: {x: number; y: number; s?: number}) => {
   const s = p.s ?? 0.7
   return <Line pts={[[p.x - s, p.y + s], [p.x, p.y], [p.x - s, p.y - s], [p.x - s, p.y + s]]} />
 }
-// Board text: 1.7 mm font = 1.19 mm caps, 0.153 mm stroke (JLCPCB: >= 1 mm, >= 0.15 mm).
+// Board text: a 2.1 mm font prints capitals 1.04 mm high at the stroke's
+// centre, 1.23 mm overall, with a 0.19 mm stroke (JLCPCB: >= 1 mm, >= 0.15 mm;
+// tools/check_pcb.py measures it in the Gerber).
 const Label = (p: {text: string; x: number; y: number; rot?: number}) => (
-  <silkscreentext text={p.text} pcbX={p.x} pcbY={p.y} pcbRotation={p.rot ?? 0} fontSize={1.7} />
+  <silkscreentext text={p.text} pcbX={p.x} pcbY={p.y} pcbRotation={p.rot ?? 0} fontSize={2.1} />
 )
 // Reference designators stay off the silk (too small to print legibly at
 // this density); assembly.png shows them instead.
@@ -129,7 +134,10 @@ const Mp1584 = (p: At & {tag: string}) => {
           {ys.map((y, k) => (
             <smtpad key={`e${k}`} portHints={[`pin${8 - k}`]} pcbX={2.7} pcbY={y} shape="rect" width={1.6} height={0.61} />
           ))}
-          <smtpad portHints={["pin9"]} pcbX={0} pcbY={0} shape="rect" width={2.62} height={3.51} />
+          <smtpad portHints={["pin9"]} pcbX={0} pcbY={0} shape="rect" width={2.62} height={3.51} noSolderPaste />
+          {/* the exposed pad's paste, in two windows clear of its 1.0 mm hole */}
+          <solderpaste shape="rect" pcbX={0} pcbY={1.18} width={2.42} height={0.95} />
+          <solderpaste shape="rect" pcbX={0} pcbY={-1.18} width={2.42} height={0.95} />
           {/* pin 1 dot, beyond pin 1's outer end */}
           <silkscreencircle pcbX={-3.9} pcbY={2.6} radius={0.3} strokeWidth={SILK} />
           <Court w={7.6} h={5.6} />
@@ -341,7 +349,7 @@ const TestPoint = (p: At & {name: string; net: string}) => (
     pcbStyle={NOREF}
     footprint={
       <footprint>
-        <smtpad portHints={["pin1"]} pcbX={0} pcbY={0} shape="circle" radius={0.8} />
+        <smtpad portHints={["pin1"]} pcbX={0} pcbY={0} shape="circle" radius={0.8} noSolderPaste />
         <Court w={2.0} h={2.0} />
       </footprint>
     }
@@ -401,11 +409,14 @@ const C = (p: At & {name: string; value: string; n1: string; n2: string; size?: 
 //   side to BST, the inductor beyond, the output caps on its far end.
 // The input loop (CIN1 -> VIN -> SW -> diode -> GND) closes through the
 // ground pours under the chip, a chip's width across.
-const Buck = (p: {tag: string; x: number; y: number; vout: string; fbTop: string; fbTopMpn?: string}) => {
+// `flip` turns the whole block 180 deg, so its layout (and the drawn paths,
+// which are in the chip's own frame) stays the same.
+const Buck = (p: {tag: string; x: number; y: number; flip?: boolean; vout: string; fbTop: string; fbTopMpn?: string}) => {
   const {tag, vout} = p
   const n = (s: string) => `net.${s}_${tag}`
+  const k = p.flip ? -1 : 1
   // a part at block offset (dx, dy), turned r degrees
-  const at = (dx: number, dy: number, r = 0): At => ({x: p.x + dx, y: p.y + dy, rot: r})
+  const at = (dx: number, dy: number, r = 0): At => ({x: p.x + k * dx, y: p.y + k * dy, rot: (r + (p.flip ? 180 : 0)) % 360})
   return (
     <>
       <Mp1584 tag={tag} {...at(0, 0, 90)} />
@@ -460,31 +471,31 @@ const Wire = (p: {tag: string; name: string; from: string; to: string; w: number
   )
 
 // --- The board ---------------------------------------------------------------------------
-// Base X/Z -> local: (X - 42, Z - 50).
+// Base X/Z -> local: (42 - X, Z - 50).
 // X 58.5 on the +X side clears the corner bosses (59.5) and leaves the strip
 // along the +X wall, under the USB-C socket and the button, to their wires.
 const OUTLINE: [number, number][] = [
-  [-24, -46.5], // X 18 (sled + 1), Z 3.5
-  [16.5, -46.5], // X 58.5
-  [16.5, -36], // Z 14: the pot comes below the board's top from here...
-  [1.5, -36], // X 43.5 (the pot from X 44)
-  [1.5, -16], // ... to Z 34
-  [16.5, -16],
-  [16.5, 46.5], // Z 96.5: the Zero's USB-C at the rear wall
-  [-24, 46.5],
+  [24, -46.5], // X 18 (sled + 1), Z 3.5
+  [24, 46.5], // Z 96.5: the Zero's USB-C at the rear wall
+  [-16.5, 46.5], // X 58.5
+  [-16.5, -16], // Z 34: the pot comes below the board's top from here...
+  [-1.5, -16], // X 43.5 (the pot from X 44)
+  [-1.5, -36], // ... to Z 14
+  [-16.5, -36],
+  [-16.5, -46.5],
 ]
 // M2 holes onto the plate's bosses (base X, Z in models/carrier_pcb.scad).
 // The plate's vent slots (X 20..42, Z 33..62) and its feet's recesses
 // (X 55, Z 16 / 84) keep the bosses off those spots.
 const HOLES: [number, number][] = [
-  [-21, -43.5],
-  [13.5, -43.5],
-  [-1.5, -19.8],
-  [14.2, -3],
-  [5.5, 9.5],
-  [13.5, 24],
-  [-21, 43.5],
-  [13, 43.5],
+  [21, -43.5],
+  [-13.5, -43.5],
+  [1.5, -19.8],
+  [-14.2, -7.4],
+  [-5.5, 9.5],
+  [-13.5, 24],
+  [21, 43.5],
+  [-13, 43.5],
 ]
 
 export default () => (
@@ -494,13 +505,16 @@ export default () => (
     thickness={1.6}
     fabricatorPreset="jlcpcb_standard"
     isViaInPadAllowed // only the bucks' solder-access holes, in their exposed pads
-    pcbStyle={{viaHoleDiameter: 0.3, viaPadDiameter: 0.6}}
+    // 0.3 / 0.7 mm vias (0.2 mm ring): the router keeps a via's 0.7 clear of
+    // other traces, where at 0.6 it left 0.115 mm
+    pcbStyle={{viaHoleDiameter: 0.3, viaPadDiameter: 0.7}}
     minViaHoleDiameter={0.3}
-    minViaPadDiameter={0.6}
+    minViaPadDiameter={0.7}
     minTraceWidth={0.25}
-    minTraceToPadEdgeClearance={0.15}
+    minTraceToPadEdgeClearance={0.16}
     minPadEdgeToPadEdgeClearance={0.2}
     minViaEdgeToPadEdgeClearance={0.2}
+    minViaHoleEdgeToViaHoleEdgeClearance={0.5}
     minTraceToHoleEdgeClearance={0.3}
     minBoardEdgeClearance={0.5}
     autorouter={{traceClearance: 0.2, allowViaInPad: false}}
@@ -508,31 +522,36 @@ export default () => (
     // FAN_TACH into VIN near buck A); tools/check_pcb.py verifies the result
     autorouterVersion="beta_pipeline7"
     defaultTraceWidth={0.3}
+    // Two phases: every other net first, then GND, which the pours carry;
+    // the router adds GND traces and vias only where a pad's patch of pour
+    // needs joining to the rest
+    routeRemaining={false}
   >
-    <net name="GND" isGroundNet />
-    <net name="VIN" isPowerNet nominalTraceWidth={0.5} />
-    <net name="V12" isPowerNet nominalTraceWidth={0.5} />
-    <net name="FAN12" isPowerNet nominalTraceWidth={0.5} />
-    <net name="BENCH12" isPowerNet nominalTraceWidth={0.5} />
-    <net name="V5RAW" isPowerNet nominalTraceWidth={0.4} />
-    <net name="V5" isPowerNet nominalTraceWidth={0.4} />
-    <net name="V3" isPowerNet />
-    <net name="BATT_SENSE" />
-    <net name="FAN_TACH" />
-    <net name="FAN_PWM" />
-    <net name="DIAL_WIPER" />
-    <net name="OLED_SDA" />
-    <net name="OLED_SCL" />
-    <net name="CHG_STAT" />
-    <net name="CHG_RAW" />
-    <net name="SCR_BTN" />
+    <net name="GND" isGroundNet routingPhaseIndex={1} />
+    <net name="VIN" isPowerNet nominalTraceWidth={0.5} routingPhaseIndex={0} />
+    <net name="V12" isPowerNet nominalTraceWidth={0.5} routingPhaseIndex={0} />
+    <net name="FAN12" isPowerNet nominalTraceWidth={0.5} routingPhaseIndex={0} />
+    <net name="BENCH12" isPowerNet nominalTraceWidth={0.5} routingPhaseIndex={0} />
+    <net name="V5RAW" isPowerNet nominalTraceWidth={0.4} routingPhaseIndex={0} />
+    <net name="V5" isPowerNet nominalTraceWidth={0.4} routingPhaseIndex={0} />
+    <net name="V3" isPowerNet routingPhaseIndex={0} />
+    <net name="BATT_SENSE" routingPhaseIndex={0} />
+    <net name="FAN_TACH" routingPhaseIndex={0} />
+    <net name="FAN_PWM" routingPhaseIndex={0} />
+    <net name="DIAL_WIPER" routingPhaseIndex={0} />
+    <net name="OLED_SDA" routingPhaseIndex={0} />
+    <net name="OLED_SCL" routingPhaseIndex={0} />
+    <net name="CHG_STAT" routingPhaseIndex={0} />
+    <net name="CHG_RAW" routingPhaseIndex={0} />
+    <net name="SCR_BTN" routingPhaseIndex={0} />
 
     {/* RP2040-Zero: its top edge on the board's rear edge, USB-C at the cutout (X 37.5) */}
-    <ZeroModule x={-4.5} y={34.75} />
+    <ZeroModule x={4.5} y={34.75} />
 
-    {/* Bucks: A = 12 V fan rail, B = 5 V for the Zero */}
-    <Buck tag="A" x={-11.8} y={-4.2} vout="net.V12" fbTop="140k" />
-    <Buck tag="B" x={7.1} y={-4.2} vout="net.V5RAW" fbTop="52.3k" fbTopMpn="0805W8F5232T5E" />
+    {/* Bucks: A = 12 V fan rail, B = 5 V for the Zero; each block turned
+        180 deg, its inductor toward the board's +x side */}
+    <Buck tag="A" x={11.8} y={-6.18} flip vout="net.V12" fbTop="140k" />
+    <Buck tag="B" x={-7.1} y={-6.18} flip vout="net.V5RAW" fbTop="52.3k" fbTopMpn="0805W8F5232T5E" />
 
     {/* VIN in, and its bulk capacitor: damps the ringing when the dial's switch
         connects the pack through its leads to the bucks' ceramic inputs */}
@@ -540,43 +559,47 @@ export default () => (
       name="J1_VIN"
       mpn="KF301-5.0-2P"
       lcsc="C474881"
-      x={-3.0}
+      x={3.3}
       y={-27.5}
       rot={270}
       pitch={5.0}
       hole={1.3}
       pad={2.4}
       nets={["net.VIN", "net.GND"]}
-      body={{w: 10.67, front: 4.0, back: 3.6}} // 7.6 deep, 3.6 on the wire side, facing the pot
+      body={{w: 10.67, front: 4.0, back: 3.6}} // 7.6 deep, 3.6 on the wire side: +x, base -X, away from the pot
       plug="from_y_pos"
     />
-    <Electrolytic name="C_BULK" posNet="net.VIN" negNet="net.GND" x={6.5} y={-42.9} />
+    {/* + and - at J1's wire entry, drawn: text this small prints as a dot */}
+    <silkscreenpath route={[{x: 7.6, y: -25}, {x: 9.2, y: -25}]} strokeWidth={SILK} />
+    <silkscreenpath route={[{x: 8.4, y: -25.8}, {x: 8.4, y: -24.2}]} strokeWidth={SILK} />
+    <silkscreenpath route={[{x: 7.6, y: -30}, {x: 9.2, y: -30}]} strokeWidth={SILK} />
+    <Electrolytic name="C_BULK" posNet="net.VIN" negNet="net.GND" x={-6.5} y={-42.9} rot={180} />
 
     {/* 12 V diode-OR: pack buck and bench input join at FAN12 */}
-    <SmaDiode name="D_OR" mpn="SS34" lcsc="C115205" kNet="net.FAN12" aNet="net.V12" x={-14} y={-28} rot={90} />
-    <SmaDiode name="D_BENCH" mpn="SS34" lcsc="C115205" kNet="net.FAN12" aNet="net.BENCH12" x={-10.5} y={-34} rot={270} />
+    <SmaDiode name="D_OR" mpn="SS34" lcsc="C115205" kNet="net.FAN12" aNet="net.V12" x={14} y={-28} rot={90} />
+    <SmaDiode name="D_BENCH" mpn="SS34" lcsc="C115205" kNet="net.FAN12" aNet="net.BENCH12" x={10.5} y={-34} rot={270} />
     {/* 5 V feed protection (SS14): buck B -> Zero 5V pin, so USB can't back-feed the buck */}
-    <SmaDiode name="D_5V" mpn="SS14" lcsc="C2480" kNet="net.V5" aNet="net.V5RAW" x={-1} y={14} rot={270} />
+    <SmaDiode name="D_5V" mpn="SS14" lcsc="C2480" kNet="net.V5" aNet="net.V5RAW" x={1} y={14} rot={270} />
 
     {/* Battery divider 100k/22k + 100nF -> GP26 (on the switched VIN) */}
-    <R name="R_DIV1" value="100k" n1="net.VIN" n2="net.BATT_SENSE" x={-8.5} y={7.5} />
-    <R name="R_DIV2" value="22k" n1="net.BATT_SENSE" n2="net.GND" x={-5} y={7.5} />
-    <C name="C_DIV" value="100nF" n1="net.BATT_SENSE" n2="net.GND" x={-5} y={10} />
+    <R name="R_DIV1" value="100k" n1="net.VIN" n2="net.BATT_SENSE" x={8.5} y={7.5} rot={180} />
+    <R name="R_DIV2" value="22k" n1="net.BATT_SENSE" n2="net.GND" x={5} y={7.5} rot={180} />
+    <C name="C_DIV" value="100nF" n1="net.BATT_SENSE" n2="net.GND" x={5} y={10} rot={180} />
 
     {/* Tach pull-up 10k to 3V3 + 1nF -> GP14 */}
-    <R name="R_TACH" value="10k" n1="net.V3" n2="net.FAN_TACH" x={-12.2} y={16} rot={270} />
-    <C name="C_TACH" value="1nF" n1="net.FAN_TACH" n2="net.GND" x={-12.2} y={12.4} rot={270} />
+    <R name="R_TACH" value="10k" n1="net.V3" n2="net.FAN_TACH" x={12.2} y={16} rot={270} />
+    <C name="C_TACH" value="1nF" n1="net.FAN_TACH" n2="net.GND" x={12.2} y={12.4} rot={270} />
 
     {/* Charger status: 10k series + optional 1N4148 clamp to 3V3 -> GP13 */}
-    <R name="R_STAT" value="10k" n1="net.CHG_RAW" n2="net.CHG_STAT" x={-15} y={12} rot={90} />
-    <Sod323 name="D_CLAMP" kNet="net.V3" aNet="net.CHG_STAT" x={-15} y={16} rot={270} />
+    <R name="R_STAT" value="10k" n1="net.CHG_RAW" n2="net.CHG_STAT" x={15} y={12} rot={90} />
+    <Sod323 name="D_CLAMP" kNet="net.V3" aNet="net.CHG_STAT" x={15} y={16} rot={270} />
 
     {/* Connectors */}
     <HoleConn
       name="J2_FAN"
       mpn="47053-1000"
       lcsc="C240840"
-      x={-20.2}
+      x={20.2}
       y={-28}
       rot={270}
       pitch={2.54}
@@ -585,22 +608,22 @@ export default () => (
       nets={["net.GND", "net.FAN12", "net.FAN_TACH", "net.FAN_PWM"]}
       body={{w: 10.2, front: 3.5, back: 3.5}} // 10.2 x 5.84, keyed; 3.5 both sides to be safe
     />
-    <Xh name="J3_DIAL" x={-20.4} y={21.8} rot={270} nets={["net.V3", "net.DIAL_WIPER", "net.GND"]} />
-    <Xh name="J4_OLED" x={-20.4} y={33.75} rot={270} nets={["net.GND", "net.V3", "net.OLED_SCL", "net.OLED_SDA"]} />
-    <Xh name="J5_BTN" x={12.8} y={16.5} rot={270} nets={["net.SCR_BTN", "net.GND"]} />
-    <Xh name="J6_CHG" x={-20.4} y={12} rot={270} nets={["net.CHG_RAW", "net.GND"]} />
-    <Xh name="J7_BENCH" x={-13} y={-42.5} nets={["net.BENCH12", "net.GND"]} />
+    <Xh name="J3_DIAL" x={20.4} y={21.8} rot={270} nets={["net.V3", "net.DIAL_WIPER", "net.GND"]} />
+    <Xh name="J4_OLED" x={20.4} y={33.75} rot={270} nets={["net.GND", "net.V3", "net.OLED_SCL", "net.OLED_SDA"]} />
+    <Xh name="J5_BTN" x={-12.8} y={16.5} rot={270} nets={["net.SCR_BTN", "net.GND"]} />
+    <Xh name="J6_CHG" x={20.4} y={12} rot={270} nets={["net.CHG_RAW", "net.GND"]} />
+    <Xh name="J7_BENCH" x={13} y={-42.5} rot={180} nets={["net.BENCH12", "net.GND"]} />
 
     {/* Test points */}
-    <TestPoint name="TP_VIN" net="net.VIN" x={-5.5} y={-20.3} />
-    <TestPoint name="TP_12V" net="net.FAN12" x={-14} y={-36} />
-    <TestPoint name="TP_5V" net="net.V5" x={2} y={18.8} />
-    <TestPoint name="TP_3V3" net="net.V3" x={9.8} y={27.5} />
-    <TestPoint name="TP_GND" net="net.GND" x={9.8} y={31} />
+    <TestPoint name="TP_VIN" net="net.VIN" x={5.5} y={-20.3} />
+    <TestPoint name="TP_12V" net="net.FAN12" x={14} y={-36} />
+    <TestPoint name="TP_5V" net="net.V5" x={-2} y={18.8} />
+    <TestPoint name="TP_3V3" net="net.V3" x={-9.8} y={27.5} />
+    <TestPoint name="TP_GND" net="net.GND" x={-9.8} y={31} />
 
     {/* The notch round the pot is off the board: keep the router out of it,
         and 0.5 mm off its edges */}
-    <keepout shape="rect" pcbX={9.25} pcbY={-26} width={16.5} height={21} layers={["top", "bottom"]} />
+    <keepout shape="rect" pcbX={-9.25} pcbY={-26} width={16.5} height={21} layers={["top", "bottom"]} />
 
     {/* Mounting holes (M2) onto the plate's bosses */}
     {HOLES.map(([x, y], i) => (
@@ -612,19 +635,17 @@ export default () => (
     <copperpour layer="bottom" connectsTo="net.GND" clearance={0.32} boardEdgeMargin={0.5} useThermalReliefs />
 
     {/* Silkscreen: what each connector is, which way round, test points */}
-    <Label text="CARRIER+PSU v2" x={-13} y={-16.6} />
-    <Label text="FAN" x={-20.5} y={-20.5} />
-    <Label text="+" x={-8} y={-25} />
-    <Label text="-" x={-8} y={-30} />
-    <Label text="DIAL" x={-15.4} y={21.5} rot={90} />
-    <Label text="BENCH" x={-13} y={-38.3} />
-    <Label text="CHG" x={-20.5} y={7.0} />
-    <Label text="BTN" x={7.6} y={16.5} rot={90} />
-    <Label text="OLED" x={-16.9} y={41.0} />
-    <Label text="12V" x={-17.5} y={-36} />
-    <Label text="VIN" x={-9} y={-20.3} />
-    <Label text="5V" x={4.5} y={18.8} />
-    <Label text="3V3" x={12.6} y={27.5} />
-    <Label text="GND" x={12.6} y={31} />
+    <Label text="CARRIER+PSU v2.1" x={11.3} y={-16.6} />
+    <Label text="FAN" x={20.5} y={-20.5} />
+    <Label text="DIAL" x={15.4} y={21.5} rot={90} />
+    <Label text="BENCH" x={13} y={-38.3} />
+    <Label text="CHG" x={20.5} y={7.0} />
+    <Label text="BTN" x={-7.6} y={16.5} rot={90} />
+    <Label text="OLED" x={19.4} y={41.3} />
+    <Label text="12V" x={17.5} y={-36} />
+    <Label text="VIN" x={9} y={-20.3} />
+    <Label text="5V" x={-4.5} y={18.8} />
+    <Label text="3V3" x={-12.6} y={27.5} />
+    <Label text="GND" x={-12.6} y={31} />
   </board>
 )

@@ -246,7 +246,7 @@ with `view = "base_layout"` shows them from above.
   Z 3.5..96.5), with a 15 × 20 mm notch out of its +X side round the dial pot
   (X 43.5..58.5, Z 14..34). Its 12 V buck, the one that warms, sits under the other vent slots in the base's top.
   Its connectors, roughly (X, Z):
-  - J1 VIN (39, 22), at the front by the notch, its wire entry facing +X;
+  - J1 VIN (39, 22), at the front by the notch, its wire entry facing -X, away from the pot;
   - J2 FAN (22, 22), right under the fan-cable slot;
   - J7 BENCH (29, 7.5), at the front edge;
   - J6 CHG, J3 DIAL and J4 OLED along the -X edge (X about 21.6), at Z 62, 72 and 84;

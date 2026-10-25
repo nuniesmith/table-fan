@@ -16,7 +16,7 @@ waits for the module, so its hole spacing can be measured first. Run
    | `sled_end` | A cell slides in without force or rattle | Tight: raise `cell_gap` in `battery_sled.scad` |
    | `side_wall` | The dial pot's bushing, the knob recess, the charge socket and the button | Print it when those parts arrive (below) |
 2. **Head**, the **faceplate** and the **bail**, once `fan_fit` and `bail_joint` have passed: these depend only on the fan's standard size.
-3. **Sled + lid** and the **bottom plate**. The plate now has 8 bosses for the carrier + PSU board. If you printed it before, with 4 bosses for the old perfboard, reprint it (the sled hasn't changed).
+3. **Sled + lid** and the **bottom plate**. The plate now has 8 bosses for the carrier + PSU board v2.1. If you printed it before, with 4 bosses for the old perfboard or for the v2 board (one boss at Z 47, now 42.6), reprint it (the sled hasn't changed).
 4. **Base**. It depends on the pot, charge socket and button, so print `side_wall` with the real parts first. To print it sooner, check the WH138 against the listing (M7 bushing, 24 mm body) and plan to file the 13 × 10 socket opening if your socket differs.
 5. **OLED pod**: sized from the module's listing. Check that its mounting holes are 23.3 × 23.8 mm apart before printing; otherwise set `oled_hole_dx` / `oled_hole_dy` and re-slice.
 

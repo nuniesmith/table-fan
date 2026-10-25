@@ -1,10 +1,15 @@
-# Table Fan — Carrier + PSU PCB v2
+# Table Fan — Carrier + PSU PCB v2.1
 
 Custom 2-layer board (1.6 mm FR4, 1 oz) that replaces the perfboard carrier
 **and** both MP1584 mini buck modules. The BMS and the 4S USB-C charger stay
 as modules. The outline is 40.5 × 93 mm, with a 15 × 20 mm notch out of its
 +X front side round the dial pot. It lies on the bottom plate beside the
 battery sled, on **8 M2 bosses**.
+
+**Order v2.1, not v2.** v2's Gerbers (PR #18) were the mirror image of the
+board the 3D model fits: made from them, the notch lands on the sled's side
+and the holes miss the bosses. v2.1 is the same board the right way round
+(see "Changes in v2.1").
 
 Design source: `carrier-psu.tsx` (tscircuit). Ready-to-order Gerbers are in
 `gerber/` (top/bottom copper, mask, silk, paste, edge cuts, plated + NPTH
@@ -63,11 +68,14 @@ pre-crimped leads). The 18 AWG power leads go into the screw terminal J1.
 
 ## Build, check and export
 
+Needs Node.js with npm, [Bun](https://bun.sh) (tscircuit's `tsci` runs
+under it), `unzip`, and Python 3 with shapely 2 (`pip install shapely`;
+matplotlib too, for the pictures).
+
 ```
 cd electronics/pcb
-npm install        # tscircuit 0.0.3003, pinned in package.json
-npm run build      # writes dist/, the circuit JSON the checks read
-npm run gerbers    # exports and unzips into gerber/
+npm ci             # exactly the versions in package-lock.json
+npm run gerbers    # build (writes dist/), clean the pours, export into gerber/
 cd ../..
 python3 tools/check_pcb.py               # fab, nets, bodies, fit: PASS/FAIL
 python3 tools/check_pcb.py --self-test   # breaks each check on purpose
@@ -85,23 +93,34 @@ After any change to the parts, redraw the assembly map:
 `python3 tools/check_pcb.py --assembly electronics/pcb/assembly.png`).
 
 - `check_pcb.py` reads the Gerbers and the build's circuit JSON. Its
-  checks: **fab** (JLCPCB 2-layer rules, with margin); **nets** (the copper
-  joins exactly the pins in a netlist written out by hand in the tool: no
-  opens, no shorts); **bodies** (no courtyard overlaps, M2 heads clear of
-  parts and pads); **fit** (the outline on the base's free floor, each part
-  under what hangs above it). Needs `pip install shapely` (and matplotlib
-  for the pictures).
-- tscircuit is pinned at 0.0.3003: a rebuild gives the same Gerbers as
-  the ones in `gerber/`, apart from their date stamps (this version also
-  rebuilds v1's). The scripts run with the parts engine off: the LCSC
-  numbers are written in the source.
+  checks: **fab** (JLCPCB 2-layer rules, with margin: no copper slivers,
+  the outline read from Edge_Cuts, text height measured in the Gerber,
+  silk 0.15 mm off pads); **nets** (the copper joins exactly the pins in a
+  netlist written out by hand in the tool: no opens, no shorts); **bodies**
+  (no courtyard overlaps, M2 heads clear of parts and pads); **fit** (the
+  board maps onto the base turned, not mirrored; the outline on the base's
+  free floor, each part under what hangs above it). `--self-test` breaks
+  each rule 14 ways and checks each one is caught.
+- The board's coordinates are its top view, which is the base seen from
+  above with its rear wall up: board x = 42 − base X, y = base Z − 50.
+  Seen that way the base's +X (the pot's side) is on the left.
+- tscircuit 0.0.3003 and everything under it are pinned by
+  `package-lock.json`: `npm ci` then `npm run gerbers` gives the Gerbers in
+  `gerber/` again, apart from their date stamps. The scripts run with the
+  parts engine off: the LCSC numbers are written in the source.
+- `npm run gerbers` cleans the copper pours before exporting
+  (`check_pcb.py --clean-pours`): tscircuit's pour leaves slivers between
+  fine-pitch pads and along traces, which a fab can't make. It removes pour
+  copper narrower than 0.2 mm and any piece left loose.
 - The router is `autorouterVersion="beta_pipeline7"` (the default one
   shorted two nets here). Each buck's own wiring (SW, BST, VIN/GND to CIN1,
   FB, COMP, EN, FREQ, VOUT) is drawn in the source, to the datasheet
-  layout; the rest is autorouted.
+  layout. The router lays every other net, then GND last: the pours carry
+  GND, and it adds GND traces and vias only where a pad's patch of pour
+  needs joining.
 - Design rules in the source: track 0.25 mm min (0.3 default, 0.4–0.6
-  power), clearance 0.2 target / 0.15 min, vias 0.3 / 0.6 mm tented,
-  copper 0.5 mm off the edge.
+  power), 0.16 mm trace to pad (the router leaves at least 0.15 mm between
+  nets), vias 0.3 / 0.7 mm tented, copper 0.5 mm off the edge.
 
 ## Ordering
 
@@ -150,9 +169,10 @@ pre-crimped XH leads). The fan plugs into J2 directly.
 
 [`assembly.png`](assembly.png) is the map: every part's reference and value.
 **The designators are not on the board.** The silkscreen has the connector
-names, a triangle at each connector's pin 1, a bar at each diode's cathode,
-a + and a chamfered outline at the electrolytic's +, a dot at each MP1584's
-pin 1 and at the Zero's 5V pin, and the test point names.
+names, a triangle at each connector's pin 1, + and − beside J1's pins, a
+bar at each diode's cathode, a + and a chamfered outline at the
+electrolytic's +, a dot at each MP1584's pin 1 and at the Zero's 5V pin,
+and the test point names.
 
 - Order: the MP1584s first (smallest pitch), then the 0805/1210 passives,
   diodes, inductors, the electrolytic, the Zero, and the through-hole
@@ -182,17 +202,44 @@ pin 1 and at the Zero's 5V pin, and the test point names.
 - The board lies on the bottom plate, +X of the battery sled, on 8 M2
   bosses (5 mm tall, 5 mm across), fixed with **8× M2 × 6 self-tapping**
   screws (the perfboard used 4). Holes, base (X, Z): (21, 6.5),
-  (55.5, 6.5), (40.5, 30.2), (56.2, 47), (47.5, 59.5), (55.5, 74),
+  (55.5, 6.5), (40.5, 30.2), (56.2, 42.6), (47.5, 59.5), (55.5, 74),
   (21, 93.5), (55, 93.5).
 - The bosses come from the board: `models/carrier_pcb.scad` is written by
   `check_pcb.py --write-scad` from the build, and `fan_housing.scad`
   includes it. Don't edit it by hand.
 - **The bottom plate (plate 06, with the sled) must be reprinted**, or
   printed for the first time, from the new model. See
-  [PRINTING.md](../../docs/PRINTING.md).
+  [PRINTING.md](../../docs/PRINTING.md). A plate printed for v2 has one
+  boss 4.4 mm off (at Z 47, now 42.6): reprint that too.
 - The charger moves from the plate onto the sled's lid, beside the BMS,
   under the roof's left vent slots (foam tape). Its STAT lead runs to J6.
-- J1's wire entry faces +X, toward the pot.
+- J1's wire entry faces −X, toward the sled, away from the pot.
+
+## Changes in v2.1
+
+v2 (PR #18) fixed v1, but its review after merging found:
+- **Its Gerbers were mirrored.** Its local frame put board +x at base +X,
+  which seen from above is a mirror image, so the board as made would not
+  have matched the model: the notch on the sled's side, the holes off the
+  bosses. v2.1 maps board +x to base −X (`check_pcb.py` now tests the
+  handedness) and is v2 mirrored back, with every part placed the right way
+  up rather than mirrored; each buck block is turned 180°. One hole moved
+  (Z 47 to 42.6) to clear a part of the turned 5 V buck.
+- Copper slivers down to 0.02 mm in the top pour, between the MP1584 pins
+  and along traces: the pours are now cleaned before export.
+- Text 0.96–0.99 mm tall, under JLCPCB's 1 mm: now 1.2 mm. J1's + and −
+  were text too small to print: now drawn. The OLED label sat 0.01 mm off
+  a pad: silk now keeps 0.15 mm off every pad.
+- J1's wires entered toward the pot with 1.2 mm to spare: they now enter
+  from the other side.
+- Vias 0.3 / 0.7 mm (were 0.6): the router keeps those 0.15 mm off other
+  nets, where 0.6 mm vias ended up 0.115 mm off. GND is routed last, over
+  the pours.
+- The exposed pads' paste kept clear of their solder holes; no paste on
+  the test points.
+- The checker read the outline from the build, not Edge_Cuts, and its
+  self-test only counted any failure as a catch: both fixed. The build is
+  pinned by `package-lock.json`.
 
 ## Changes from v1
 
@@ -219,5 +266,10 @@ v1 (PR #17) had these; v2 fixes all of them:
   terminal spacing (2.2 mm), not a published land.
 - The passives' LCSC numbers came from tscircuit's parts engine at v1:
   check value and package when ordering.
+- The board is laid out for hand soldering. The paste layer is tscircuit's
+  default (each pad's paste 70 % of it each way, the exposed pads' in two
+  windows): check it before ordering a stencil. For a JLCPCB assembly
+  order, leave out U1 (the Zero, on hand) and D_CLAMP (fitted only if
+  needed); the test points are marked do-not-place.
 - tscircuit warns "4 chip overlaps in final layout": that's its
   auto-generated schematic, not the PCB.

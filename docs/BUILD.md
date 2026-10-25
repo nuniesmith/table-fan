@@ -43,7 +43,7 @@ Two parts are still waiting on what arrives:
 - [ ] Test it before anything is plugged in (J2–J7 empty): the bench supply on J1 at 12–16.8 V, limited to 100 mA. Against TP_GND, TP_12V should read 11.8–12.0 V, TP_5V about 4.6–4.8 V and TP_3V3 3.3 V. Idle current is tens of mA. The outputs are set by resistors: there is nothing to adjust.
 
 ### 3b. The board on the plate
-- [ ] It needs no drilling: lay it on the bottom plate, and its 8 holes sit on the plate's 8 bosses, with the Zero's USB-C at the rear edge. A plate with 4 bosses was printed for the old perfboard: reprint it (PRINTING.md, plate 06).
+- [ ] It needs no drilling: lay it on the bottom plate, and its 8 holes sit on the plate's 8 bosses, with the Zero's USB-C at the rear edge. A plate printed for the old perfboard (4 bosses) or for the v2 board (one boss at Z 47, now 42.6) won't fit: reprint it (PRINTING.md, plate 06).
 
 ### 3c. The battery pack
 - [ ] Check each cell reads 3.0–4.2 V, all four within 0.02 V of each other.

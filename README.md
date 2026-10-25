@@ -11,7 +11,7 @@
   - Every part renders manifold, and `tools/check_geometry.py` checks the fits. The test prints are the first parts printed.
   - Review 2 (2026-10-19) readied it for printing: the fan cable has a path, the charger is vented, the button and pot mounts are stronger, the fit allows for ASA's shrink, and there are test prints. **Start with [docs/PRINTING.md](docs/PRINTING.md)**: what to print first, settings, and what to order now. Then [docs/BUILD.md](docs/BUILD.md) takes it from printed parts to a running fan.
 - **Electronics**: Fully documented BOM, pinout, wiring diagram (SVG schematic). Parts ordered Oct 17, 2026.
-  - The carrier + PSU board v2 ([electronics/pcb/](electronics/pcb/README.md)) replaces the perfboard and the MP1584 modules: the Zero, both bucks and a connector for every lead on one board. Gerbers are ready to order, checked by `tools/check_pcb.py`.
+  - The carrier + PSU board v2.1 ([electronics/pcb/](electronics/pcb/README.md)) replaces the perfboard and the MP1584 modules: the Zero, both bucks and a connector for every lead on one board. Gerbers are ready to order, checked by `tools/check_pcb.py`. (v2's Gerbers were mirrored: don't order them.)
 - **Firmware**: MicroPython in `firmware/`.
 - **Next**: measure the parts as they arrive ("Verify on arrival" in the electronics doc), order the board, print, bench-test.
 
@@ -78,11 +78,11 @@ table-fan/
 3. Slice in your preferred slicer. This build is **PLA**. It softens at about 55–60 °C, so keep the finished fan out of a hot parked cab; PETG or ASA would take the heat with the same files. Settings and the print order are in [docs/PRINTING.md](docs/PRINTING.md).
 
 ## Checking the geometry
-`python3 tools/check_geometry.py` renders every part and 21 fit checks with OpenSCAD and prints PASS/FAIL. It takes about five minutes on 16 cores. What it checks:
+`python3 tools/check_geometry.py` renders every part and 22 fit checks with OpenSCAD and prints PASS/FAIL. It takes about five minutes on 16 cores. What it checks:
 - the fan's intake is clear;
 - the fan fits, bears on its corner columns, and its bolts reach their inserts;
 - the cells fit the sled, and the sled, boards, dial, charge port and button fit the base without touching each other;
-- the carrier + PSU board bears on the plate's bosses;
+- the carrier + PSU board bears on the plate's bosses, and each boss is whole;
 - the openings go through: charge port, button, Zero plug, vents, and the fan cable's slot and floor groove;
 - a press on the button bears on a floor, not on glue;
 - the bail swings from up to folded without hitting anything, its teeth mesh at every 15° step and bear when clamped, it folds flush with the sides, and it leaves at least 40 mm of hook room;

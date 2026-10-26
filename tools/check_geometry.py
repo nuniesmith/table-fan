@@ -163,6 +163,8 @@ def render(openscad, scad, defines, out, raw=None):
     cmd.append(str(MODELS / scad))
     proc = subprocess.run(cmd, capture_output=True, text=True)
     log = proc.stdout + proc.stderr
+    if "ERROR:" in log:                 # an assert or a syntax error: never "empty"
+        return None, log, f"OpenSCAD error (exit {proc.returncode})"
     empty = any(m in log for m in ("top level object is empty", "No top level geometry",
                                    "Nothing to export", "Current top level object is not a 3D object"))
     if out.exists() and out.stat().st_size > 0:

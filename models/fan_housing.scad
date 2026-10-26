@@ -604,9 +604,9 @@ module fan_bolts_keepout() {    // M3 x 30 bolts from the fan's front flange int
 // The head-to-base screws' shanks, seated: the countersink is 5.5 across
 // where the smallest head stops, the deepest the tip can go.
 join_seat_y = -ci - 1.7 + (5.5 - 3.4) * 1.8 / 3.2;
-assert(-ci - 1.7 + (6.72 - 3.4) * 1.8 / 3.2 - join_screw_l <= head_y0 - 4,
-       "join_screw_l: a large head leaves under 4 mm in the insert");
 module join_screws_keepout() {
+    assert(-ci - 1.7 + (6.72 - 3.4) * 1.8 / 3.2 - join_screw_l <= head_y0 - 4,
+           "join_screw_l: a large head leaves under 4 mm in the insert");
     for (p = join_pts) translate([p[0], 0, p[1]])
         y_cyl(2.9, join_seat_y - join_screw_l, join_screw_l - 2);
 }

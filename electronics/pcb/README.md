@@ -1,4 +1,4 @@
-# Table Fan — Carrier + PSU PCB v2.1
+# Table Fan — Carrier + PSU PCB v2.2
 
 Custom 2-layer board (1.6 mm FR4, 1 oz) that replaces the perfboard carrier
 **and** both MP1584 mini buck modules. The BMS and the 4S USB-C charger stay
@@ -6,10 +6,11 @@ as modules. The outline is 40.5 × 93 mm, with a 15 × 20 mm notch out of its
 +X front side round the dial pot. It lies on the bottom plate beside the
 battery sled, on **8 M2 bosses**.
 
-**Order v2.1, not v2.** v2's Gerbers (PR #18) were the mirror image of the
+**Order v2.2, not v2.** v2's Gerbers (PR #18) were the mirror image of the
 board the 3D model fits: made from them, the notch lands on the sled's side
 and the holes miss the bosses. v2.1 is the same board the right way round
-(see "Changes in v2.1").
+(see "Changes in v2.1"); v2.2 adds reverse-polarity protection and I2C
+pull-ups (see "Changes in v2.2"). The holes are the same as v2.1's.
 
 Design source: `carrier-psu.tsx` (tscircuit). Ready-to-order Gerbers are in
 `gerber/` (top/bottom copper, mask, silk, paste, edge cuts, plated + NPTH
@@ -35,17 +36,23 @@ build sequence: [BUILD.md](../../docs/BUILD.md).
   - Buck B → **4.98 V** (FB 52.3k/10k), into the Zero's 5V pin through an
     SS14, so USB can't back-feed the buck. The 5V pin sees about 4.6–4.7 V,
     which the Zero's 3.3 V regulator absorbs.
-- **47 µF 35 V electrolytic** across VIN: damps the ringing when the dial's
-  switch connects the pack to the bucks' ceramic input caps.
+- **Reverse-polarity protection**: the pack's + reaches VIN through a
+  P-MOSFET (AO3407A) with its gate pulled to GND (10k), so it conducts only
+  with + on +; reversed, it blocks. It drops about 20 mV. A 12 V zener
+  keeps its gate within its ±20 V rating through the switch-on ringing.
+- **47 µF 35 V electrolytic** across VIN, after the FET: damps the ringing
+  when the dial's switch connects the pack to the bucks' ceramic input caps.
 - **Battery divider** 100k/22k + 100 nF → GP26.
 - **Tach** pull-up 10k to 3V3 + 1 nF → GP14.
+- **I2C pull-ups** 4.7k to 3V3 on SDA and SCL, by J4. Most OLED modules
+  carry their own; with both, the bus still sinks under 3 mA.
 - **Charger status** → GP13 through 10k, plus an optional 1N4148WS clamp to
   3V3 (see Assembly).
 - **Test points**: VIN, 12V (the fan rail, after the diode), 5V (the Zero's
   5V), 3V3, GND.
 - Ground pours on both layers, with thermal spokes on the through-hole GND
-  pads. Nothing smaller than 0805 (apart from the optional SOD-323 clamp):
-  hand-solderable throughout.
+  pads. Nothing smaller than 0805, SOD-323 or SOT-23: hand-solderable
+  throughout.
 
 ## Connectors
 
@@ -53,9 +60,9 @@ Pin 1 is at the silkscreen triangle.
 
 | Ref | Part | Pins (1 first) | Goes to |
 |---|---|---|---|
-| J1 VIN | KF301-5.0-2P screw terminal, 5.0 mm pitch | 1 + (VIN), 2 − (GND) | + from the dial switch (after the fuse); − from BMS P− (ground star). 18 AWG |
+| J1 VIN | KF301-5.0-2P screw terminal, 5.0 mm pitch | 1 + (to VIN through the reverse-polarity FET), 2 − (GND) | + from the dial switch (after the fuse); − from BMS P− (ground star). 18 AWG |
 | J2 FAN | Molex 47053-1000, 4-pin PC fan header | 1 GND, 2 +12 V, 3 tach, 4 PWM | the Noctua's own plug, directly |
-| J3 DIAL | JST XH 3-pin (B3B-XH-A) | 1 3V3, 2 wiper (GP27), 3 GND | the pot's three lugs: ends to 3V3 and GND, wiper (middle) to pin 2 |
+| J3 DIAL | JST XH 3-pin (B3B-XH-A) | 1 3V3, 2 wiper (GP27), 3 GND | the pot's three lugs, seen from the knob with the lugs down: right to pin 1, wiper (middle) to 2, left to 3, so clockwise is faster |
 | J4 OLED | JST XH 4-pin (B4B-XH-A) | 1 GND, 2 3V3, 3 SCL (GP1), 4 SDA (GP0) | the OLED module (its listing: GND VCC SCL SDA; check its silkscreen) |
 | J5 BTN | JST XH 2-pin (B2B-XH-A) | 1 GP11, 2 GND | the screen button |
 | J6 CHG | JST XH 2-pin | 1 charger STAT (through the board's 10k to GP13), 2 GND | the charger module's status pin |
@@ -65,7 +72,7 @@ Where they sit (base X, Z, roughly):
 - J1 (39, 22), at the front by the notch;
 - J2 (22, 22), front-left, right under the roof's fan-cable slot;
 - J7 (29, 7.5), at the front edge;
-- on the −X edge (X ~21.6): J6 at Z 62, J3 at Z 72, J4 at Z 84;
+- on the −X edge (X ~21.6): J6 at Z 58.5, J3 at Z 68.3, J4 at Z 80.3;
 - J5 (55, 66.5), by the button.
 
 JST XH takes 22–28 AWG: the 26 AWG signal leads get XH plugs (crimped, or
@@ -114,11 +121,15 @@ After any change to the parts, redraw the assembly map:
   `gerber/` again, apart from their date stamps. The scripts run with the
   parts engine off: the LCSC numbers are written in the source.
 - `npm run gerbers` cleans the build before exporting
-  (`check_pcb.py --clean`): tscircuit's pour leaves slivers between
-  fine-pitch pads and along traces, which a fab can't make, so it removes
-  pour copper narrower than 0.2 mm and any piece left loose; and the
-  exporter drops the turn of a rotated paste rectangle, so it rewrites
-  those as plain ones.
+  (`check_pcb.py --clean`): it cuts each pour 0.32 mm clear of every other
+  net's copper (tscircuit's pour once ran over the drawn FAN_PWM and
+  BATT_SENSE, whose vias were written differently from the router's); the
+  pour leaves
+  slivers between fine-pitch pads and along traces, which a fab can't make,
+  so it removes pour copper narrower than 0.2 mm and any piece left loose; it fills
+  gaps under 0.15 mm within one net's own copper (two traces leaving a pad
+  side by side), which would trap etchant; and the exporter drops the turn
+  of a rotated paste rectangle, so it rewrites those as plain ones.
 - The router is `autorouterVersion="beta_pipeline7"` (the default one
   shorted two nets here). tscircuit's own routing DRC is off: it counts
   only traces, not copper joined through the bottom planes; `check_pcb.py`
@@ -151,13 +162,16 @@ After any change to the parts, redraw the assembly map:
 | 4 | SS34 (SMA, 40 V 3 A) | C115205 | DC_A, DC_B, D_OR, D_BENCH |
 | 1 | SS14 (SMA, 40 V 1 A, MDD) | C2480 | D_5V |
 | 2 | 1N4148WS (SOD-323): D_BST_A, and D_CLAMP (optional, by hand) | C2128 | D_BST_A, D_CLAMP |
+| 1 | AO3407A (AOS) P-MOSFET, SOT-23, 30 V, gate ±20 V | C15155 | Q_RP |
+| 1 | BZT52C12S 12 V zener, SOD-323 (JSCJ) | C14643 | D_GZ |
 | 2 | 10 µF 50 V X7R 1210 (Samsung CL32B106KBJNNNE) | C138687 | CIN1_A, CIN1_B |
 | 2 | 22 µF 25 V X5R 1210 (Samsung CL32A226KAJNNNE) | C52306 | COUT1_A, COUT1_B |
 | 1 | 47 µF 35 V electrolytic 6.3 × 5.8 (Nichicon UWT1V470MCL1GS) | C87068 | C_BULK |
 | 7 | 100 nF 0805 | C28233 | CIN2_x, CBST_x, COUT2_x, C_DIV |
 | 2 | 220 pF 0805 | C107145 | CCOMP_x |
 | 1 | 1 nF 0805 | C46653 | C_TACH |
-| 4 | 10k 0805 | C17414 | RFB2_x, R_TACH, R_STAT |
+| 5 | 10k 0805 | C17414 | RFB2_x, R_TACH, R_STAT, R_GATE |
+| 2 | 4.7k 0805 (UNI-ROYAL 0805W8F4701T5E) | C17673 | R_SCL, R_SDA |
 | 1 | 140k 0805 | C17460 | RFB1_A |
 | 1 | 52.3k 0805 1 % (YAGEO RC0805FR-0752K3L) | C273887 | RFB1_B |
 | 2 | 68.1k 0805 | C17795 | RCOMP_x |
@@ -201,11 +215,16 @@ and the test point names.
 - Headers: the fan header and the JST headers have symmetric pin patterns,
   so they can go in backwards. **Before soldering each one, mate its plug
   and check the plug's pin-1 wire is at the triangle.**
+- Q_RP: the dot is at pin 1, its gate; the lone pin on the other side is
+  its drain. D_GZ, the zener: its bar (cathode) toward Q_RP's source, the
+  pin beside the gate.
 - First power test, before anything is plugged in (J2–J7 empty): a
   current-limited bench supply (12–16.8 V, 100 mA limit) on J1. Measure
   TP_12V (11.8–12.0 V with no fan on it; 11.6–11.7 V once the fan runs,
   after the SS34), TP_5V (about 4.6–4.8 V) and TP_3V3 (3.3 V, from the
-  Zero). Idle current is tens of mA.
+  Zero). Idle current is tens of mA. Then swap the supply's leads on J1
+  for a moment: it should draw nothing, and TP_VIN read 0 V. That proves
+  the reverse-polarity FET before the pack goes on.
 
 ## Mechanical — read before printing
 
@@ -229,6 +248,28 @@ and the test point names.
 - J6 pin 2 is the board's GND, which is the BMS's P−. On a BMS with a
   separate C− pad, leave it open and wire STAT alone (see
   [ELECTRONICS_BOM_AND_WIRING.md](../ELECTRONICS_BOM_AND_WIRING.md), "BMS").
+
+## Changes in v2.2
+
+The reviews of v2.1 left these, now done:
+- **Reverse-polarity protection.** A pack wired backwards to J1 used to
+  forward-bias both MP1584s through their catch diodes and switch nodes
+  until the fuse blew, which would most likely kill both. Q_RP (P-MOSFET),
+  R_GATE and the zener D_GZ now sit between J1 and VIN, below J1;
+  C_BULK is on the protected side.
+- **I2C pull-ups**, 4.7k on SDA and SCL, above J4: the screen works with a
+  module that has none.
+- J6, J3 and J4 moved 3.5 mm toward the front (Z 58.5, 68.3, 80.3) to
+  make room for the pull-ups. The holes haven't moved: a plate printed for
+  v2.1 fits.
+- Routing: with the new parts the router packed FAN_PWM against
+  BATT_SENSE, so both are now drawn on v2.1's routes; VIN from the FET to
+  TP_VIN is drawn too. Each buck has two more GND stitching vias, by
+  RCOMP/REN2's and RFREQ's ground ends, where the router had put its own
+  vias against the pads.
+- `check_pcb.py --clean` now cuts each pour clear of every other net,
+  fills acid-trap slits within any one net's copper, and fills only where
+  the copper stays 0.15 mm wide.
 
 ## Changes in v2.1
 

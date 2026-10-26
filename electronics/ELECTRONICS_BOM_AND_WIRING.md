@@ -41,7 +41,7 @@ assembly and ordering are in `electronics/pcb/README.md`.
 | Status-pin protection | 1 + 0–1 | 10k in series, on the board; a footprint for a 1N4148WS clamp to 3V3 beside it | Fit the clamp only if the charger's status pin measures above 3.3 V |
 | M2 screws + heat-set inserts | 4+4 | M2×6 countersunk | The front faceplate |
 | M2 screws | 8 | M2×6 self-tapping | The carrier + PSU board to the bottom-plate bosses |
-| M3 screws + heat-set inserts | 10+10 | 4× M3×16 + 4× M3×8 countersunk, 2× M3×8 pan head | Head to base, front and rear; bottom plate |
+| M3 screws + heat-set inserts | 10+10 | 4× M3×14 + 4× M3×8 countersunk, 2× M3×8 pan head | Head to base, front and rear; bottom plate |
 | M3 screws + heat-set inserts | 4+4 | M3×30 | Fan, through its corner holes into the head's corner columns |
 | M4 thumb screws + heat-set inserts | 2+2 | M4×16 knurled (DIN 464) + 2 wave and 2 steel washers | Bail pivots; teeth round them hold the angle |
 | Other fixings | – | M2 self-tapping: sled 2× M2×8 + lid 4× M2×6, OLED pod 2× M2×10 + module 4× M2×5; 4 stick-on feet | See `docs/DESIGN_OVERVIEW.md` |
@@ -108,9 +108,10 @@ USB 5V (bench cable) ──► MT3608 (12 V, bench only) ──► board J7
 Fan's own plug ──► J2    Dial pot ──► J3    OLED ──► J4    Screen button ──► J5
 
 ┌─ CARRIER + PSU BOARD (electronics/pcb/) ──────────────────────────────────────────
-│ J1 + ─┬─► MP1584 (12.0 V) ──► SS34 ──► J2 pin 2 (fan +12 V)
-│       ├─► MP1584 (4.98 V) ──► SS14 ──► Zero 5V pin
-│       └─► 100k/22k divider (+100 nF) ──► Zero GP26
+│ J1 + ──► P-MOSFET (reverse-polarity block) ──► VIN
+│ VIN ─┬─► MP1584 (12.0 V) ──► SS34 ──► J2 pin 2 (fan +12 V)
+│      ├─► MP1584 (4.98 V) ──► SS14 ──► Zero 5V pin
+│      └─► 100k/22k divider (+100 nF) ──► Zero GP26
 │           (switched: 0 V on GP26 while the Zero is off)
 │ J7 + (bench 12 V) ──► SS34 ──► J2 pin 2 (diode-OR with the 12 V buck)
 │ J1 - ──► GND pours ──► Zero GND, J2 pin 1, buck grounds, pot end, divider bottom
@@ -118,7 +119,7 @@ Fan's own plug ──► J2    Dial pot ──► J3    OLED ──► J4    Scr
 │ Zero GP14 ──► J2 pin 3 (tach) + 10k pull-up to 3V3 + 1 nF
 │ J6 status ──► 10k (+ clamp to 3V3, only if fitted) ──► Zero GP13
 │ J3: pot ends to 3V3/GND (pins 1, 3), wiper (pin 2) ──► Zero GP27
-│ J4: GND, 3V3, SCL (GP1), SDA (GP0) (direct, 3.3 V – no level shifter;
+│ J4: GND, 3V3, SCL (GP1), SDA (GP0), 4.7k pull-ups to 3V3 (3.3 V – no level shifter;
 │     check the OLED's GND/VCC order on its silkscreen!)
 │ J5: Zero GP11 ──► tactile button ──► GND (screen toggle, internal pull-up)
 │ Zero GP16 ──► onboard WS2812 (status)
@@ -254,7 +255,7 @@ with `view = "base_layout"` shows them from above.
   - J1 VIN (39, 22), at the front by the notch, its wire entry facing -X, away from the pot;
   - J2 FAN (22, 22), right under the fan-cable slot;
   - J7 BENCH (29, 7.5), at the front edge;
-  - J6 CHG, J3 DIAL and J4 OLED along the -X edge (X about 21.6), at Z 62, 72 and 84;
+  - J6 CHG, J3 DIAL and J4 OLED along the -X edge (X about 21.6), at Z 58.5, 68.3 and 80.3;
   - J5 BTN (55, 66.5), by the button;
   - the Zero at the rear, its USB-C on the rear wall's cutout (X 37.5).
 - **+X wall**:

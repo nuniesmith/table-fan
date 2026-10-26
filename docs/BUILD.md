@@ -31,16 +31,16 @@ Two parts are still waiting on what arrives:
 - [ ] Clear any stringing out of the holes: the pot hole, the charge socket opening, the button pocket and its leg slots.
 
 ## 2. Head and fan
-- [ ] Head onto the base: 4× M3 × 16 countersunk, from inside the fan cavity down into the base's inserts. Then 2× M3 × 8 pan head from inside the empty base, up through the holes in its roof into the head's rear inserts.
+- [ ] Head onto the base: 4× M3 × 14 countersunk (an M3 × 16 bottoms out in the insert before its head seats), from inside the fan cavity down into the base's inserts. Then 2× M3 × 8 pan head from inside the empty base, up through the holes in its roof into the head's rear inserts.
 - [ ] Turn the fan so its cable leaves at a **bottom corner**, the +X one (the dial's side) if you can, as it's nearest the slot, and with the airflow arrow pointing out of the front. Feed the plug down through the slot, lay the cable in the floor groove, and seat the fan.
 - [ ] 4× M3 × 30 from the front through the fan's corner holes into the columns' inserts. A drop of threadlocker on each.
 - [ ] Faceplate on the front: M2 × 6 into the inserts. (The rear grille is part of the head.)
 
 ## 3. Electronics on the bench
 ### 3a. The board
-- [ ] Solder it up as [its README](../electronics/pcb/README.md) says ("Assembly"): the MP1584s first, the through-hole connectors last, each header checked against its mated plug's pin 1 before soldering (they fit either way round). The designators aren't on the board: [`assembly.png`](../electronics/pcb/assembly.png) is the map.
+- [ ] Solder it up as [its README](../electronics/pcb/README.md) says ("Assembly"): the MP1584s first, the through-hole connectors last, each header checked against its mated plug's pin 1 before soldering (they fit either way round). Solder the Zero with its USB-C end flush with the board's rear edge, not set back: a plug's body reaches below the board's top face. The designators aren't on the board: [`assembly.png`](../electronics/pcb/assembly.png) is the map.
 - [ ] D_CLAMP, the 1N4148WS: fit it only if the charger's status pin measured over 3.3 V.
-- [ ] Test it before anything is plugged in (J2–J7 empty): the bench supply on J1 at 12–16.8 V, limited to 100 mA. Against TP_GND, TP_12V should read 11.8–12.0 V, TP_5V about 4.6–4.8 V and TP_3V3 3.3 V. Idle current is tens of mA. The outputs are set by resistors: there is nothing to adjust.
+- [ ] Test it before anything is plugged in (J2–J7 empty): the bench supply on J1 at 12–16.8 V, limited to 100 mA. Against TP_GND, TP_12V should read 11.8–12.0 V, TP_5V about 4.6–4.8 V and TP_3V3 3.3 V. Idle current is tens of mA. The outputs are set by resistors: there is nothing to adjust. Then swap the supply's leads on J1 for a moment: it should draw nothing (the reverse-polarity FET blocks).
 
 ### 3b. The board on the plate
 - [ ] It needs no drilling: lay it on the bottom plate, and its 8 holes sit on the plate's 8 bosses, with the Zero's USB-C at the rear edge. A plate printed for the old perfboard (4 bosses) or for the v2 board (one boss at (56.2, 47), now (55.7, 42.6)) won't fit: reprint it (PRINTING.md, plate 06).
@@ -63,12 +63,12 @@ Cut every wire below to length, label both ends, and heat-shrink every soldered 
 | Pack − | cell 1 → BMS B− | 18 black | 80 mm |
 | Pack + | cell 4 → BMS B+ | 18 red | 120 mm |
 | Switched supply in | BMS P+ → **2 A fuse holder** → dial switch | 18 red | 250 mm (fuse inline) |
-| Switched supply out | dial switch → J1 + | 18 red | 170 mm (J1's wire entry faces away from the dial: lead it round the terminal) |
+| Switched supply out | dial switch → J1 + | 18 red | 170 mm (J1's wire entry faces away from the dial: lead it round the terminal). At the switch, bend both switch leads toward the roof or the front wall, not straight back: J1 stands right behind the pot |
 | Ground | BMS P− → J1 − | 18 black | 140 mm |
 | Charge in | charge socket → charger in (2 wires) | 18 red + black | 210 mm |
 | Charge out | charger out → BMS (P+/P− if common-port) (2) | 18 red + black | 80 mm |
 | Charger status | charger STAT + GND → J6 (XH-2) | 26 | 90 mm |
-| Dial | pot lugs → J3 (XH-3): the ends to pins 1 and 3, the wiper to 2 | 26 | 210 mm |
+| Dial | pot lugs → J3 (XH-3): seen from the knob end with the lugs down, the right lug to pin 1 (3V3), the middle (wiper) to 2, the left to 3 (GND), so clockwise is faster. If the fan runs fastest just above off, swap the outer two | 26 | 210 mm |
 | Button | button → J5 (XH-2) | 26 | 150 mm |
 | OLED | module GND, VCC, SCL, SDA → J4 (XH-4) pins 1–4 | 26 | 210 mm |
 | Fan | the fan's own cable → J2 | (fan cable) | about 170 mm needed from the fan's +X corner (about 200 mm from the −X one); if short, a 4-pin fan extension |
@@ -79,7 +79,7 @@ The 26 AWG signal leads plug into the board's JST XH headers: crimp XH plugs ont
 ## 4. Into the base
 Turn the base upside down on a soft cloth.
 - [ ] Wall parts:
-  - **dial pot**: snap off its locating tab, then the nut tight against the inside ring;
+  - **dial pot**: snap off its locating tab and turn it so its lugs point to the front wall (toward the roof, the plate or the charge socket there's no room for them), then the nut tight against the inside ring;
   - **charge socket**: glue it into its opening;
   - **button**: push it into its pocket from outside, legs through the slots, a drop of glue to keep it in;
   - **OLED pod**: screw the module to its posts first, then the pod onto the rear wall with 2× M2 × 10.

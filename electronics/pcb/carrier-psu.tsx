@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Table Fan — Carrier + PSU board v2.2
+// Table Fan — Carrier + PSU board v2.3
 // Replaces the perfboard carrier AND both MP1584 mini buck modules.
 // 2-layer, 1.6 mm FR4, parts on top. Local coords are the board seen from its
 // top, which is the base seen from above with its rear wall up: +x = base -X
@@ -301,6 +301,9 @@ const Electrolytic = (p: At & {name: string; posNet: string; negNet: string}) =>
 // Pins in a row along X (rot 0) from pin 1, centred; the housing reaches
 // `back` to +Y and `front` to -Y (at rot 270, pin 1 is on top and +Y turns
 // to +X). Courtyard = the housing, from its drawing, plus 0.2 mm all round.
+// The pin rows are symmetric, so a header fits either way round: `outline`
+// and `keyMarks` draw the housing as it really sits, with the side that tells
+// which way, from each part's drawing (as KiCad's library has them).
 const HoleConn = (p: At & {
   name: string
   mpn: string
@@ -311,6 +314,9 @@ const HoleConn = (p: At & {
   nets: string[] // pin 1 first
   body: {w: number; front: number; back: number} // along the row; either side of it
   plug?: "from_above" | "from_y_pos" // how the plug or wire goes in, at rot 0
+  outline?: [number, number][][] // the housing in silk; default a rectangle inside it
+  keyMarks?: [number, number][][] // the housing's telltale side, in silk (not `key`: React keeps that)
+  peg?: {x: number; y: number; d: number} // an unplated hole for the housing's locating peg
 }) => {
   const labels: Record<string, string> = {}
   const conns: Record<string, string> = {}
@@ -343,9 +349,13 @@ const HoleConn = (p: At & {
               outerDiameter={p.pad}
             />
           ))}
-          {/* housing outline (its sides drawn 0.4 in, off the board's edge; its
-              ends 0.15 in, off the end pins), and pin 1's end marked */}
-          <Line pts={[[-halfW + 0.15, p.body.back - 0.4], [halfW - 0.15, p.body.back - 0.4], [halfW - 0.15, -p.body.front + 0.4], [-halfW + 0.15, -p.body.front + 0.4], [-halfW + 0.15, p.body.back - 0.4]]} />
+          {/* housing outline (by default its sides drawn 0.4 in, off the board's
+              edge; its ends 0.15 in, off the end pins), and pin 1's end marked */}
+          {(p.outline ?? [[[-halfW + 0.15, p.body.back - 0.4], [halfW - 0.15, p.body.back - 0.4], [halfW - 0.15, -p.body.front + 0.4], [-halfW + 0.15, -p.body.front + 0.4], [-halfW + 0.15, p.body.back - 0.4]]]).map((pts, i) => (
+            <Line key={`o${i}`} pts={pts} />
+          ))}
+          {(p.keyMarks ?? []).map((pts, i) => <Line key={`k${i}`} pts={pts} />)}
+          {p.peg && <hole pcbX={p.peg.x} pcbY={p.peg.y} diameter={p.peg.d} />}
           <Tri x={-halfW - 0.25} y={0} s={0.6} />
           <Court w={p.body.w + 0.4} h={p.body.front + p.body.back + 0.4} y={(p.body.back - p.body.front) / 2} />
         </footprint>
@@ -355,9 +365,20 @@ const HoleConn = (p: At & {
   )
 }
 // JST XH vertical (B2B/B3B/B4B-XH-A): 2.50 mm pitch, housing (n-1) x 2.5 +
-// 4.9 long x 5.75 deep, the pins 2.35 mm from one face and 3.4 from the
-// other; the courtyard takes 3.4 on both sides. Holes 1.0 mm.
-const xh = (n: number) => ({w: (n - 1) * 2.5 + 4.9, front: 3.4, back: 3.4})
+// 4.9 long x 5.75 deep. With pin 1 on the left, the face 2.35 mm from the
+// pins (back, +Y) has slots in its wall: at both ends and between the end
+// pins (JST's drawing, as KiCad's footprint). The silk draws them, so the
+// header goes in with its slotted wall there. Holes 1.0 mm.
+const xh = (n: number) => ({w: (n - 1) * 2.5 + 4.9, front: 3.4, back: 2.35})
+const xhSilk = (n: number) => {
+  const m = ((n - 1) * 2.5) / 2 // pin 1 at -m, the last pin at +m
+  const e = m + 2.35, b = 2.25, f = -3.3, s = 1.6 // drawn 0.1 inside the housing
+  const slot = (x0: number, x1: number): [number, number][] => [[x0, b], [x0, s], [x1, s], [x1, b]]
+  return {
+    outline: [[[-e, b], [e, b], [e, f], [-e, f], [-e, b]]] as [number, number][][],
+    keyMarks: [slot(-e, -m - 0.75), slot(-m + 0.75, m - 0.75), slot(m + 0.75, e)],
+  }
+}
 const XH_PN: Record<number, [string, string]> = {
   2: ["B2B-XH-A(LF)(SN)", "C158012"],
   3: ["B3B-XH-A(LF)(SN)", "C144394"],
@@ -372,6 +393,7 @@ const Xh = (p: At & {name: string; nets: string[]}) => (
     hole={1.0}
     pad={1.7}
     body={xh(p.nets.length)}
+    {...xhSilk(p.nets.length)}
   />
 )
 
@@ -400,7 +422,7 @@ const LCSC: Record<string, string> = {
   "100k": "C149504", "140k": "C17460", "200k": "C17539", "4.7k": "C17673",
   "52.3k": "C273887", // YAGEO RC0805FR-0752K3L, 1 %
   "100nF": "C28233", "220pF": "C107145", "1nF": "C46653",
-  "10uF": "C138687", // Samsung CL32B106KBJNNNE, 50 V X7R 1210 (VIN: 16.8 V, up to ~26 V at switch-on)
+  "10uF": "C710759", // Murata GRJ32ER71H106KE11L, 50 V X7R 1210, soft termination: across the pack, so a crack from board flex can't short it (VIN: 16.8 V, up to ~26 V at switch-on)
   "22uF": "C52306", // Samsung CL32A226KAJNNNE, 25 V X5R 1210
 }
 const R = (p: At & {name: string; value: string; n1: string; n2: string; mpn?: string}) => (
@@ -712,7 +734,14 @@ export default () => (
       hole={1.0}
       pad={1.75}
       nets={["net.GND", "net.FAN12", "net.FAN_TACH", "net.FAN_PWM"]}
-      body={{w: 10.2, front: 3.5, back: 3.5}} // 10.2 x 5.84, keyed; 3.5 both sides to be safe
+      // 10.2 x 5.8 (KiCad's FanPinHeader, which names this part): the pins 2.5
+      // from the back face, where a locating peg sits by pin 3 (Molex: "PCB
+      // locator: yes"), so it only goes in one way; the key wall runs along
+      // pins 1-3 on the front face
+      body={{w: 10.2, front: 3.3, back: 2.5}}
+      peg={{x: 1.27, y: 2.16, d: 1.2}}
+      outline={[[[0.42, 2.4], [-5.0, 2.4], [-5.0, -3.2], [5.0, -3.2], [5.0, 2.4], [2.12, 2.4]]]}
+      keyMarks={[[[-3.81, -3.2], [-3.81, -2.3], [1.27, -2.3], [1.27, -3.2]]]}
     />
     <Xh name="J3_DIAL" x={20.4} y={18.3} rot={270} nets={["net.V3", "net.DIAL_WIPER", "net.GND"]} />
     <Xh name="J4_OLED" x={20.4} y={30.25} rot={270} nets={["net.GND", "net.V3", "net.OLED_SCL", "net.OLED_SDA"]} />
@@ -741,7 +770,7 @@ export default () => (
     <copperpour layer="bottom" connectsTo="net.GND" clearance={0.32} boardEdgeMargin={0.5} useThermalReliefs />
 
     {/* Silkscreen: what each connector is, which way round, test points */}
-    <Label text="CARRIER+PSU V2.2" x={11.3} y={-17.2} />
+    <Label text="CARRIER+PSU V2.3" x={11.3} y={-17.2} />
     <Label text="FAN" x={20.5} y={-20.5} />
     <Label text="DIAL" x={15.4} y={21.5} rot={90} />
     <Label text="BENCH" x={13} y={-38.3} />

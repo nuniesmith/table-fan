@@ -1,4 +1,4 @@
-# Table Fan — Carrier + PSU PCB v2.2
+# Table Fan — Carrier + PSU PCB v2.3
 
 Custom 2-layer board (1.6 mm FR4, 1 oz) that replaces the perfboard carrier
 **and** both MP1584 mini buck modules. The BMS and the 4S USB-C charger stay
@@ -6,11 +6,13 @@ as modules. The outline is 40.5 × 93 mm, with a 15 × 20 mm notch out of its
 +X front side round the dial pot. It lies on the bottom plate beside the
 battery sled, on **8 M2 bosses**.
 
-**Order v2.2, not v2.** v2's Gerbers (PR #18) were the mirror image of the
+**Order v2.3, not v2.** v2's Gerbers (PR #18) were the mirror image of the
 board the 3D model fits: made from them, the notch lands on the sled's side
 and the holes miss the bosses. v2.1 is the same board the right way round
 (see "Changes in v2.1"); v2.2 adds reverse-polarity protection and I2C
-pull-ups (see "Changes in v2.2"). The holes are the same as v2.1's.
+pull-ups, and v2.3 the fan header's locating hole and each header's outline
+(see "Changes in v2.3" and "in v2.2"). The mounting holes are the same as
+v2.1's.
 
 Design source: `carrier-psu.tsx` (tscircuit). Ready-to-order Gerbers are in
 `gerber/` (top/bottom copper, mask, silk, paste, edge cuts, plated + NPTH
@@ -164,7 +166,7 @@ After any change to the parts, redraw the assembly map:
 | 2 | 1N4148WS (SOD-323): D_BST_A, and D_CLAMP (optional, by hand) | C2128 | D_BST_A, D_CLAMP |
 | 1 | AO3407A (AOS) P-MOSFET, SOT-23, 30 V, gate ±20 V | C15155 | Q_RP |
 | 1 | BZT52C12S 12 V zener, SOD-323 (JSCJ) | C14643 | D_GZ |
-| 2 | 10 µF 50 V X7R 1210 (Samsung CL32B106KBJNNNE) | C138687 | CIN1_A, CIN1_B |
+| 2 | 10 µF 50 V X7R 1210, soft termination (Murata GRJ32ER71H106KE11L) | C710759 | CIN1_A, CIN1_B |
 | 2 | 22 µF 25 V X5R 1210 (Samsung CL32A226KAJNNNE) | C52306 | COUT1_A, COUT1_B |
 | 1 | 47 µF 35 V electrolytic 6.3 × 5.8 (Nichicon UWT1V470MCL1GS) | C87068 | C_BULK |
 | 7 | 100 nF 0805 | C28233 | CIN2_x, CBST_x, COUT2_x, C_DIV |
@@ -212,9 +214,11 @@ and the test point names.
 - The Zero: solder only its castellated edges. Under it the board is all
   solder mask (its vias are tented), so the pads on its underside can't
   short to anything; don't tin them.
-- Headers: the fan header and the JST headers have symmetric pin patterns,
-  so they can go in backwards. **Before soldering each one, mate its plug
-  and check the plug's pin-1 wire is at the triangle.**
+- Headers: their pin rows are symmetric, so the silk draws each housing
+  the way it must sit. The fan header (J2) has a locating peg that fits
+  its small hole only one way round. Each JST header's slotted wall goes
+  to the side where the silk draws the slots. **Then mate each plug and
+  check its pin-1 wire is at the triangle before soldering.**
 - Q_RP: the dot is at pin 1, its gate; the lone pin on the other side is
   its drain. D_GZ, the zener: its bar (cathode) toward Q_RP's source, the
   pin beside the gate.
@@ -248,6 +252,21 @@ and the test point names.
 - J6 pin 2 is the board's GND, which is the BMS's P−. On a BMS with a
   separate C− pad, leave it open and wire STAT alone (see
   [ELECTRONICS_BOM_AND_WIRING.md](../ELECTRONICS_BOM_AND_WIRING.md), "BMS").
+
+## Changes in v2.3
+
+- **The fan header's locating peg.** The Molex 47053-1000 has a peg under
+  its housing ("PCB locator: yes"), and v2–v2.2 had no hole for it: the
+  header wouldn't have sat flat. J2 now has a 1.2 mm unplated hole for it,
+  so it only goes in one way round, pin 1 at the triangle.
+- **Header outlines.** Each header's silk is its real housing, off-centre
+  on its pins: the JST headers' slotted wall and the fan header's key wall
+  show which way round each goes. Before, a symmetric box only marked
+  pin 1.
+- **Input caps with soft termination** (Murata GRJ32ER71H106KE11L): the
+  input caps sit right across the pack, so a crack from board flex would
+  short it.
+- `check_pcb.py` counts only holes of 2 mm and up as the M2 mounting holes.
 
 ## Changes in v2.2
 
@@ -331,9 +350,20 @@ v1 (PR #17) had these; v2 fixes all of them:
 - MP1584 exposed-pad land: from MPS's recommended land pattern (2.62 ×
   3.51 mm, rows 5.40 mm apart). The package drawing itself (MPS
   MF-PO-D-0018) is worth a glance before ordering.
-- The JST XH and fan header courtyards are drawn with margin because their
-  exact pin offset wasn't confirmed. The electrolytic's land is from its
-  terminal spacing (2.2 mm), not a published land.
+- The headers' housings, slots, key wall and peg hole are from KiCad's
+  library footprints (JST XH, generated from JST's drawing; FanPinHeader,
+  which names the Molex 47053-1000), not from the makers' drawings
+  directly. The electrolytic's land is from its terminal spacing (2.2 mm),
+  not a published land.
+- The soft-termination input caps (C710759) were found by a search, like
+  the 52.3k: check stock. Any 10 µF 50 V X7R or X7S 1210 works; soft
+  (flexible) termination is what keeps a crack from board flex from
+  shorting the pack.
+- In a parked cab: the PLA housing softens at 55–60 °C, well before the
+  board's limits (the MP1584 is rated to 85 °C ambient, the X5R output caps
+  to 85 °C, the rest to 105–125 °C). Keep the fan out of a hot cab, and
+  use ferrules on J1's leads: a screw terminal on bare strands works loose
+  under vibration.
 - The passives' LCSC numbers came from tscircuit's parts engine at v1:
   check value and package when ordering.
 - The board is laid out for hand soldering. The paste layer is tscircuit's

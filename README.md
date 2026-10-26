@@ -11,7 +11,7 @@
   - Every part renders manifold, and `tools/check_geometry.py` checks the fits. The test prints are the first parts printed.
   - Review 2 (2026-10-19) readied it for printing: the fan cable has a path, the charger is vented, the button and pot mounts are stronger, the fit allows for ASA's shrink, and there are test prints. **Start with [docs/PRINTING.md](docs/PRINTING.md)**: what to print first, settings, and what to order now. Then [docs/BUILD.md](docs/BUILD.md) takes it from printed parts to a running fan.
 - **Electronics**: Fully documented BOM, pinout, wiring diagram (SVG schematic). Parts ordered Oct 17, 2026.
-  - The carrier + PSU board v2.2 ([electronics/pcb/](electronics/pcb/README.md)) replaces the perfboard and the MP1584 modules: the Zero, both bucks, reverse-polarity protection and a connector for every lead on one board. Gerbers are ready to order, checked by `tools/check_pcb.py`. (v2's Gerbers were mirrored: don't order them.)
+  - The carrier + PSU board v2.3 ([electronics/pcb/](electronics/pcb/README.md)) replaces the perfboard and the MP1584 modules: the Zero, both bucks, reverse-polarity protection and a connector for every lead on one board. Gerbers are ready to order, checked by `tools/check_pcb.py`. (v2's Gerbers were mirrored: don't order them.)
 - **Firmware**: MicroPython in `firmware/`.
 - **Next**: measure the parts as they arrive ("Verify on arrival" in the electronics doc), order the board, print, bench-test.
 

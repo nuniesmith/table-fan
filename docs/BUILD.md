@@ -38,7 +38,7 @@ Two parts are still waiting on what arrives:
 
 ## 3. Electronics on the bench
 ### 3a. The board
-- [ ] Solder it up as [its README](../electronics/pcb/README.md) says ("Assembly"): the MP1584s first, the through-hole connectors last, each header checked against its mated plug's pin 1 before soldering (they fit either way round). Solder the Zero with its USB-C end flush with the board's rear edge, not set back: a plug's body reaches below the board's top face. The designators aren't on the board: [`assembly.png`](../electronics/pcb/assembly.png) is the map.
+- [ ] Solder it up as [its README](../electronics/pcb/README.md) says ("Assembly"): the MP1584s first, the through-hole connectors last, each header the way its silk outline draws it (the fan header's peg fits its hole only one way; each JST header's slotted wall goes where the silk draws the slots), then its mated plug's pin-1 wire checked at the triangle before soldering. Solder the Zero with its USB-C end flush with the board's rear edge, not set back: a plug's body reaches below the board's top face. The designators aren't on the board: [`assembly.png`](../electronics/pcb/assembly.png) is the map.
 - [ ] D_CLAMP, the 1N4148WS: fit it only if the charger's status pin measured over 3.3 V.
 - [ ] Test it before anything is plugged in (J2–J7 empty): the bench supply on J1 at 12–16.8 V, limited to 100 mA. Against TP_GND, TP_12V should read 11.8–12.0 V, TP_5V about 4.6–4.8 V and TP_3V3 3.3 V. Idle current is tens of mA. The outputs are set by resistors: there is nothing to adjust. Then swap the supply's leads on J1 for a moment: it should draw nothing (the reverse-polarity FET blocks).
 
@@ -74,7 +74,7 @@ Cut every wire below to length, label both ends, and heat-shrink every soldered 
 | Fan | the fan's own cable → J2 | (fan cable) | about 170 mm needed from the fan's +X corner (about 200 mm from the −X one); if short, a 4-pin fan extension |
 | Bench (bench only) | MT3608 out → J7 (XH-2) | 26 | as convenient |
 
-The 26 AWG signal leads plug into the board's JST XH headers: crimp XH plugs onto them (XHP housings, SXH crimps), or use pre-crimped XH leads. Check each plug's pin-1 wire against the triangle on the board. XH only takes 22–28 AWG, so the 18 AWG power leads go into J1's screw terminal instead: twisted strands, not a tinned end, which loosens under the screw.
+The 26 AWG signal leads plug into the board's JST XH headers: crimp XH plugs onto them (XHP housings, SXH crimps), or use pre-crimped XH leads. Check each plug's pin-1 wire against the triangle on the board. XH only takes 22–28 AWG, so the 18 AWG power leads go into J1's screw terminal instead: with a crimped ferrule (0.75–1 mm²), or failing that twisted strands; never a tinned end, which loosens under the screw. Re-tighten J1 after the first few trips.
 
 ## 4. Into the base
 Turn the base upside down on a soft cloth.

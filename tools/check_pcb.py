@@ -510,7 +510,8 @@ class Board:
                           "B_Paste": Polygon(), "F_SilkScreen": Polygon(), "B_SilkScreen": Polygon()}
         else:
             self.image = {k: layer_image(v) for k, v in self.layers.items() if k != "Edge_Cuts"}
-        self.npth = [h for h in self.holes if not h["plated"]]
+        # the M2 mounting holes (a header's locating-peg hole is unplated too, but small)
+        self.mounts = [h for h in self.holes if not h["plated"] and h["d"] >= 2.0]
 
     def copy(self):
         return copy.deepcopy(self)
@@ -829,7 +830,7 @@ def check_bodies(b):
             x0, y0, x1, y1 = o.bounds
             bad.append(f"{r1} and {r2} overlap by {x1 - x0:.2f} x {y1 - y0:.2f} mm")
     mask = b.image["F_Mask"]
-    for h in b.npth:
+    for h in b.mounts:
         head = Point(h["x"], h["y"]).buffer(SCREW_HEAD_D / 2, 64)
         for r, g in cy.items():
             if head.intersection(g).area > 1e-3:
@@ -874,7 +875,7 @@ def check_fit(b):
             room = pot_bottom(dz) - TOP
             if h > room + 1e-6:
                 bad.append(f"{r} ({h} mm tall) under the dial pot, which leaves {max(room, 0):.1f} mm")
-    for h in b.npth:
+    for h in b.mounts:
         boss = Point(to_base_xy(h["x"], h["y"], b.map)).buffer(BOSS_D / 2)
         for name, region in PLATE_FEATURES:
             if boss.intersects(region):
@@ -1021,7 +1022,7 @@ def _no_zero(b):
 
 
 def _part_under_head(b):
-    h = b.npth[0]
+    h = b.mounts[0]
     g = unary_union(b.courtyards["R_DIV1"]).centroid
     b.courtyards["R_DIV1"] = [affinity.translate(c, h["x"] - g.x, h["y"] - g.y) for c in b.courtyards["R_DIV1"]]
 
@@ -1032,7 +1033,7 @@ def _mirror_map(b):
 
 def _boss_on_vent(b):
     x, z = 31.0, 45.0                                  # on a vent slot of the plate
-    b.npth[0]["x"], b.npth[0]["y"] = (x - b.map[1]) / b.map[0], z - b.map[2]
+    b.mounts[0]["x"], b.mounts[0]["y"] = (x - b.map[1]) / b.map[0], z - b.map[2]
 
 
 def _j1_toward_pot(b):
@@ -1215,7 +1216,7 @@ def write_scad(b, path):
     rnd = lambda v: round(v, 3) + 0.0
     ring = orient(to_base(b.outline, b.map), 1.0)          # counter-clockwise in X/Z
     outline = [(rnd(x), rnd(z)) for x, z in list(ring.exterior.coords)[:-1]]
-    holes = [tuple(rnd(v) for v in to_base_xy(h["x"], h["y"], b.map)) for h in sorted(b.npth, key=lambda h: (h["y"], -h["x"]))]
+    holes = [tuple(rnd(v) for v in to_base_xy(h["x"], h["y"], b.map)) for h in sorted(b.mounts, key=lambda h: (h["y"], -h["x"]))]
     parts = []
     for r, gs in sorted(b.courtyards.items()):
         x0, z0, x1, z1 = to_base(unary_union(gs), b.map).bounds
@@ -1350,7 +1351,7 @@ def assembly(b, path):
         ax.text((gx0 + gx1) / 2, (gy0 + gy1) / 2, text, fontsize=size, ha="center", va="center",
                 rotation=90 if tall else 0, color="#002a7a", fontweight="bold", linespacing=0.95,
                 bbox=dict(fc="white", ec="none", alpha=0.75, pad=0.3))
-    ax.text(x0 + 0.5, y0 - 0.6, "Carrier + PSU v2.2: top side, parts by reference. Gold: pads. Black: the "
+    ax.text(x0 + 0.5, y0 - 0.6, "Carrier + PSU v2.3: top side, parts by reference. Gold: pads. Black: the "
             "silkscreen (cathode bars, pin-1 triangles, +).", fontsize=9, va="top")
     ax.set_xlim(x0 - 1, x1 + 1)
     ax.set_ylim(y0 - 1, y1 + 1)

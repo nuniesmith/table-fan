@@ -86,6 +86,15 @@ if (check == "fan_vs_head") {                   // review: the mezzanine and the
         intersection() { keepout(ko[i]); keepout(ko[j]); }
 } else if (check == "pcb_on_bosses") {         // touch: the carrier board bears on the plate's bosses
     intersection() { translate([0, -0.2, 0]) carrier_pcb_board(); bottom_plate(); }
+} else if (check == "pcb_bosses_whole") {      // review: a vent slot could cut a boss and pass the touch check
+    // every boss, its pilot aside, is solid plate: nothing of it is missing
+    difference() {
+        for (h = carrier_pcb_holes) translate([h[0], 0, h[1]]) difference() {
+            y_cyl(carrier_boss_d - 0.1, base_floor, carrier_boss_h - 0.05);
+            y_cyl(1.8, base_floor - 1, carrier_boss_h + 2);
+        }
+        bottom_plate();
+    }
 } else if (check == "openings") {               // review: the USB-C and button holes were blind
     intersection() { openings_keepout(); union() { head(); base(); bottom_plate(); oled_pod(); } }
 } else if (check == "bail_sweep") {             // review: the bail collided at every angle

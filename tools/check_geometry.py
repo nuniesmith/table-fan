@@ -43,6 +43,7 @@ CHECKS = [
     ("boards_vs_body", "clear", "BMS, charger, carrier board (each part to its height), pot, USB-C, button and the rear screws fit the base"),
     ("boards_vs_each_other", "clear", "those parts, the sled and the fan don't overlap (pot vs fan and board included)"),
     ("pcb_on_bosses", "touch", "the carrier board bears on the plate's bosses"),
+    ("pcb_bosses_whole", "clear", "each of the board's 8 bosses is whole: no vent or recess cuts into one"),
     ("openings", "clear", "USB-C, button, Zero plug, fan cable (slot + floor groove) and vents are open"),
     ("bail_sweep", "clear", "loosened, the bail swings from up to folded without hitting anything"),
     ("bail_detents", "clear", "at every 15 deg step the bail's teeth mesh with the wall's"),
@@ -69,6 +70,7 @@ MUTATIONS = {
     "boards_vs_body": {"charger_pos": "[50, 4]"},       # charger out through the +X wall
     "boards_vs_each_other": {"charger_pos": "[-40, 30]"},  # charger onto the BMS
     "pcb_on_bosses": {"carrier_boss_d": "0.01"},        # no bosses under the board
+    "pcb_bosses_whole": {"plate_vents": "[21, 41, 26, 62]"},   # a vent slot under the (40.5, 30.2) boss
     "openings": {"cable_groove_depth": "1"},            # cable groove too shallow for the cable
     "bail_sweep": {"bail_len": "50"},                   # bar hits the head's top rear edge
     "bail_detents": {"tooth_n": "23"},                  # teeth out of step with 15 deg

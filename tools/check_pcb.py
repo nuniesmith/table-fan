@@ -1116,7 +1116,7 @@ def clean_for_export(src, dst, width=POUR_MIN_WIDTH):
         r = RULES["min_slit"] / 2
         merged = unary_union([opened, own])
         fill = merged.buffer(r, ARC_RES).buffer(-r, ARC_RES).difference(own)
-        opened = unary_union([opened, fill.buffer(0.002)])   # overlapping, not touching at a point
+        opened = unary_union([opened, fill.buffer(0.002, join_style="mitre")])   # overlapping, not touching at a point; mitre adds no arcs
         keep = [g for g in polys(opened) if g.area > 1e-4 and g.intersects(own)]
         report.append(f"{e['layer']} pour: {pour.area - sum(g.area for g in keep):.2f} mm2 net change "
                       f"(thin or loose copper removed, same-net slits filled)")

@@ -124,6 +124,8 @@ if (check == "fan_vs_head") {                   // review: the mezzanine and the
     intersection() { head(); bail_at(0); }
 } else if (check == "fan_bolts") {              // review: the top fan screws could not clamp
     intersection() { fan_bolts_keepout(); head(); }
+} else if (check == "join_screws") {            // review: the M3 x 16 head-to-base screws bottomed out
+    intersection() { join_screws_keepout(); union() { head(); base(); } }
 } else if (check == "oled_fit") {               // review: the pod's posts left no room for the PCB
     intersection() { oled_keepout(); oled_pod(); }
 } else if (check == "oled_on_posts") {          // touch: the PCB seats on the posts

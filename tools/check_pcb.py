@@ -48,7 +48,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from shapely import affinity
-from shapely.geometry import LineString, Point, Polygon, box
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon, box
 from shapely.geometry.polygon import orient
 from shapely.ops import polygonize, unary_union
 from shapely.strtree import STRtree
@@ -84,6 +84,7 @@ RULES = {
     "via_to_opening": 0.1,      # a tented via's pad to an opening in the mask
 }
 POUR_MIN_WIDTH = 0.2            # --clean removes pour copper narrower than this
+POUR_CLEARANCE = 0.32           # the pours' clearance to other nets (carrier-psu.tsx)
 SCREW_HEAD_D = 4.2              # M2 pan head (3.8-4.0) and a little play
 
 # ---------------------------------------------------------------- netlist
@@ -116,20 +117,23 @@ def build_netlist():
     extra = {
         "GND": ["U1.GND", "C_BULK.neg", "R_DIV2.pin2", "C_DIV.pin2", "C_TACH.pin2",
                 "J1_VIN.P2", "J2_FAN.P1", "J3_DIAL.P3", "J4_OLED.P1", "J5_BTN.P2",
-                "J6_CHG.P2", "J7_BENCH.P2", "TP_GND.TP"],
-        "VIN": ["J1_VIN.P1", "C_BULK.pos", "R_DIV1.pin1", "TP_VIN.TP"],
+                "J6_CHG.P2", "J7_BENCH.P2", "TP_GND.TP", "R_GATE.pin2"],
+        "VPACK": ["J1_VIN.P1", "Q_RP.D"],
+        "VIN": ["Q_RP.S", "D_GZ.K", "C_BULK.pos", "R_DIV1.pin1", "TP_VIN.TP"],
+        "Q_GATE": ["Q_RP.G", "D_GZ.A", "R_GATE.pin1"],
         "V12": ["D_OR.A"],
         "V5RAW": ["D_5V.A"],
         "V5": ["D_5V.K", "U1.5V", "TP_5V.TP"],
         "FAN12": ["D_OR.K", "D_BENCH.K", "J2_FAN.P2", "TP_12V.TP"],
         "BENCH12": ["D_BENCH.A", "J7_BENCH.P1"],
-        "V3": ["U1.3V3", "R_TACH.pin1", "D_CLAMP.K", "J3_DIAL.P1", "J4_OLED.P2", "TP_3V3.TP"],
+        "V3": ["U1.3V3", "R_TACH.pin1", "D_CLAMP.K", "J3_DIAL.P1", "J4_OLED.P2", "TP_3V3.TP",
+               "R_SCL.pin1", "R_SDA.pin1"],
         "BATT_SENSE": ["U1.GP26", "R_DIV1.pin2", "R_DIV2.pin1", "C_DIV.pin1"],
         "FAN_TACH": ["U1.GP14", "R_TACH.pin2", "C_TACH.pin1", "J2_FAN.P3"],
         "FAN_PWM": ["U1.GP15", "J2_FAN.P4"],
         "DIAL_WIPER": ["U1.GP27", "J3_DIAL.P2"],
-        "OLED_SCL": ["U1.GP1", "J4_OLED.P3"],
-        "OLED_SDA": ["U1.GP0", "J4_OLED.P4"],
+        "OLED_SCL": ["U1.GP1", "J4_OLED.P3", "R_SCL.pin2"],
+        "OLED_SDA": ["U1.GP0", "J4_OLED.P4", "R_SDA.pin2"],
         "CHG_STAT": ["U1.GP13", "R_STAT.pin2", "D_CLAMP.A"],
         "CHG_RAW": ["R_STAT.pin1", "J6_CHG.P1"],
         "SCR_BTN": ["U1.GP11", "J5_BTN.P1"],
@@ -248,7 +252,8 @@ PART_HEIGHT = [
     (r"^C_BULK$", 6.0),         # 6.3 x 5.8 electrolytic
     (r"^(CIN1|COUT1)_", 2.7),   # 1210
     (r"^(DC_|D_OR|D_BENCH|D_5V)", 2.5),  # SMA
-    (r"^D_(CLAMP|BST_)", 1.1),  # SOD-323
+    (r"^D_(CLAMP|BST_|GZ)", 1.1),  # SOD-323
+    (r"^Q_", 1.25),             # SOT-23
     (r"^J1_", 10.5),            # KF301, wires enter from the side
     (r"^J2_", 17.0),            # fan header with the fan's plug and its cable
     (r"^J[3-7]_", 15.0),        # JST-XH with its plug and wires
@@ -1062,17 +1067,43 @@ SELF_TEST = {
 
 
 # ---------------------------------------------------------------- export
+def solid_fill(fill, copper, foreign):
+    """A slit fill kept clear of other nets, and only where it leaves the
+    copper at least RULES["min_copper"] wide: cut back near another net, a fill
+    can leave a finger, and round-off a hairline along a straight edge."""
+    g = 1e-5                                    # snapped: near-coincident edges trip GEOS
+    area = lambda x: MultiPolygon(polys(x))     # (a snapped overlay can return stray lines)
+    fill = area(fill.difference(foreign.buffer(RULES["min_space"] + 0.02, ARC_RES), grid_size=g))
+    m = RULES["min_copper"] / 2
+    body = area(copper).union(fill, grid_size=g)
+    return area(fill.intersection(body.buffer(-m, ARC_RES).buffer(m, ARC_RES), grid_size=g))
+
+
 def clean_for_export(src, dst, width=POUR_MIN_WIDTH):
     """Write the build's circuit JSON `src` to `dst` ready for the Gerber
     export:
-      - each copper pour without copper narrower than `width` (tscircuit's
-        pour leaves slivers between fine-pitch pads and along traces): an
-        opening of the pour, keeping the pieces still joined to its own net's
-        copper;
+      - each copper pour kept POUR_CLEARANCE off every other net's copper
+        (tscircuit's pour runs straight over a drawn trace that changes
+        layer), and without copper narrower than `width` (it leaves slivers
+        between fine-pitch pads and along traces): an opening of the pour,
+        keeping the pieces still joined to its own net's copper;
+      - slits under RULES["min_slit"] between one net's own copper filled,
+        the pour's and every other net's (acid traps);
       - paste drawn turned by a multiple of 90 deg rewritten as a plain
         rectangle (the exporter drops a rotated rectangle's turn)."""
     cj = json.loads(Path(src).read_text())
+    # each copper feature with its net (tscircuit's connectivity key)
+    key = {}
+    for e in cj:
+        if e["type"] in ("source_port", "source_net", "source_trace"):
+            key[e[e["type"] + "_id"]] = e.get("subcircuit_connectivity_map_key")
+    port_key = {e["pcb_port_id"]: key.get(e["source_port_id"]) for e in cj if e["type"] == "pcb_port"}
+    via_d = next((e["outer_diameter"] for e in cj if e["type"] == "pcb_via"), 0.7)
     feats = {"top": [], "bottom": []}
+    keyed = {"top": [], "bottom": []}
+    def add(L, k, g):
+        feats[L].append(g)
+        keyed[L].append((k, g))
     for e in cj:
         t = e["type"]
         if t == "pcb_smtpad":
@@ -1081,16 +1112,22 @@ def clean_for_export(src, dst, width=POUR_MIN_WIDTH):
             else:
                 g = box(e["x"] - e["width"] / 2, e["y"] - e["height"] / 2, e["x"] + e["width"] / 2, e["y"] + e["height"] / 2)
                 g = affinity.rotate(g, e.get("ccw_rotation") or 0, origin=(e["x"], e["y"]))
-            feats[e["layer"]].append(g)
+            add(e["layer"], port_key.get(e.get("pcb_port_id")), g)
         elif t in ("pcb_plated_hole", "pcb_via"):
+            k = port_key.get(e.get("pcb_port_id")) or e.get("subcircuit_connectivity_map_key")
             for L in feats:
-                feats[L].append(Point(e["x"], e["y"]).buffer(e["outer_diameter"] / 2, ARC_RES))
+                add(L, k, Point(e["x"], e["y"]).buffer(e["outer_diameter"] / 2, ARC_RES))
         elif t == "pcb_trace":
+            k = key.get(e.get("source_trace_id"))
+            for q in e["route"]:
+                if q.get("route_type") == "via":     # a drawn trace's own via
+                    for L in feats:
+                        add(L, k, Point(q["x"], q["y"]).buffer(via_d / 2, ARC_RES))
             for a, c in zip(e["route"], e["route"][1:]):
                 wires = [q for q in (a, c) if q.get("route_type") == "wire"]
                 if not wires or len({q["layer"] for q in wires}) > 1:
                     continue                # a segment ending at a via takes its wire end's layer
-                feats[wires[0]["layer"]].append(
+                add(wires[0]["layer"], k,
                     LineString([(a["x"], a["y"]), (c["x"], c["y"])]).buffer(wires[0]["width"] / 2, ARC_RES))
     out, report = [], []
     for e in cj:
@@ -1108,16 +1145,18 @@ def clean_for_export(src, dst, width=POUR_MIN_WIDTH):
         ring = lambda r: [(v["x"], v["y"]) for v in r["vertices"]]
         bs = e["brep_shape"]
         pour = Polygon(ring(bs["outer_ring"]), [ring(r) for r in bs.get("inner_rings", [])]).buffer(0)
+        pk = key.get(e.get("source_net_id"))
+        foreign = unary_union([g for k, g in keyed[e["layer"]] if k != pk])
+        pour = pour.difference(foreign.buffer(POUR_CLEARANCE, ARC_RES))
         opened = pour.buffer(-width / 2, ARC_RES).buffer(width / 2, ARC_RES).intersection(pour)
-        # its own net's copper is what it touches: other nets keep a clearance
-        own = unary_union([g for g in feats[e["layer"]] if g.distance(pour) < 1e-3])
+        own = unary_union([g for k, g in keyed[e["layer"]] if k == pk and g.distance(pour) < 1e-3])
         # and slits under RULES["min_slit"] between it and that copper are filled (a
         # gap that narrow can't hold another net, which keeps >= 0.15 mm each side)
         r = RULES["min_slit"] / 2
         merged = unary_union([opened, own])
-        fill = merged.buffer(r, ARC_RES).buffer(-r, ARC_RES).difference(own)
+        fill = solid_fill(merged.buffer(r, ARC_RES).buffer(-r, ARC_RES).difference(own), merged, foreign)
         opened = unary_union([opened, fill.buffer(0.002, join_style="mitre")])   # overlapping, not touching at a point; mitre adds no arcs
-        keep = [g for g in polys(opened) if g.area > 1e-4 and g.intersects(own)]
+        keep = [g for g in polys(opened) if g.area > 0.01 and g.intersects(own)]
         report.append(f"{e['layer']} pour: {pour.area - sum(g.area for g in keep):.2f} mm2 net change "
                       f"(thin or loose copper removed, same-net slits filled)")
         for g in polys(pour.difference(unary_union(keep).buffer(1e-4) if keep else Polygon())):
@@ -1132,6 +1171,41 @@ def clean_for_export(src, dst, width=POUR_MIN_WIDTH):
                 "inner_rings": [{"vertices": [{"x": x, "y": y} for x, y in r.coords[:-1]]} for r in g.interiors],
             }
             out.append(n)
+    # Slits between one net's own traces and pads (two traces leaving a pad
+    # side by side, say) are filled the same way, as copper under mask. Nets
+    # come from the copper itself: each layer's islands, joined through holes.
+    isl = [(L, g) for L in feats for g in polys(unary_union(feats[L]))]
+    group = list(range(len(isl)))
+    def find(i):
+        while group[i] != i:
+            group[i] = group[group[i]]
+            i = group[i]
+        return i
+    for e in cj:
+        if e["type"] in ("pcb_plated_hole", "pcb_via"):
+            hit = [i for i, (_, g) in enumerate(isl) if g.intersects(Point(e["x"], e["y"]))]
+            for i in hit[1:]:
+                group[find(i)] = find(hit[0])
+    nets = defaultdict(list)
+    for i, (L, g) in enumerate(isl):
+        nets[(find(i), L)].append(g)
+    layer = {L: unary_union([g for M, g in isl if M == L]) for L in feats}
+    r, k = RULES["min_slit"] / 2, 0
+    for (n, L), gs in nets.items():
+        own = unary_union(gs)
+        others = layer[L].difference(own.buffer(1e-4))
+        fill = solid_fill(own.buffer(r, ARC_RES).buffer(-r, ARC_RES).difference(own), own, others)
+        for g in polys(fill):
+            if g.area < 0.01:
+                continue                    # the wedges where traces leave a pad: harmless
+            g = orient(g.buffer(0.002, join_style="mitre"), 1.0)
+            out.append({"type": "pcb_copper_pour", "pcb_copper_pour_id": f"slit_fill_{k}", "shape": "brep",
+                        "layer": L, "covered_with_solder_mask": True,
+                        "brep_shape": {"outer_ring": {"vertices": [{"x": x, "y": y} for x, y in g.exterior.coords[:-1]]},
+                                       "inner_rings": []}})
+            c = g.centroid
+            report.append(f"{L}: a {g.area:.2f} mm2 slit in one net's copper filled at ({c.x:.2f}, {c.y:.2f})")
+            k += 1
     Path(dst).write_text(json.dumps(out))
     return report
 
@@ -1276,7 +1350,7 @@ def assembly(b, path):
         ax.text((gx0 + gx1) / 2, (gy0 + gy1) / 2, text, fontsize=size, ha="center", va="center",
                 rotation=90 if tall else 0, color="#002a7a", fontweight="bold", linespacing=0.95,
                 bbox=dict(fc="white", ec="none", alpha=0.75, pad=0.3))
-    ax.text(x0 + 0.5, y0 - 0.6, "Carrier + PSU v2.1: top side, parts by reference. Gold: pads. Black: the "
+    ax.text(x0 + 0.5, y0 - 0.6, "Carrier + PSU v2.2: top side, parts by reference. Gold: pads. Black: the "
             "silkscreen (cathode bars, pin-1 triangles, +).", fontsize=9, va="top")
     ax.set_xlim(x0 - 1, x1 + 1)
     ax.set_ylim(y0 - 1, y1 + 1)

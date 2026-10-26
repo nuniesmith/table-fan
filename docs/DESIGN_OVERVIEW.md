@@ -63,7 +63,7 @@ About 140 × 177 × 100 mm (W × H × D), plus the knob and the rear pod. Coordi
 ## Bill of Materials (Mechanical)
 - M2 heat-set inserts × 4 + M2 × 6 countersunk × 4 (faceplate)
 - M3 × 30 × 4 (fan), into 4 M3 heat-set inserts in the head's corner columns
-- M3 heat-set inserts × 10 more: 4 in the base's top (M3 × 16 countersunk, head to base), 2 under the head's back (M3 × 8 pan head, head to base) and 4 for the bottom plate (M3 × 8 countersunk)
+- M3 heat-set inserts × 10 more: 4 in the base's top (M3 × 14 countersunk, head to base), 2 under the head's back (M3 × 8 pan head, head to base) and 4 for the bottom plate (M3 × 8 countersunk)
 - M4 heat-set inserts × 2 + M4 × 16 knurled thumb screws (DIN 464) × 2 + M4 wave washers × 2 + M4 steel washers × 2 (bail)
 - M2 self-tapping into printed pilots: × 2 M2 × 8 (sled to plate), × 4 M2 × 6 (sled lid), × 2 M2 × 10 (OLED pod), × 4 M2 × 5 (OLED to its posts), × 8 M2 × 6 (carrier + PSU board)
 - 4 stick-on rubber feet, up to 12 mm across; 1 mm EVA foam tape; 2.5–3 mm zip ties (1 bridge on the bottom plate)

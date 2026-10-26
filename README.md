@@ -11,7 +11,7 @@
   - Every part renders manifold, and `tools/check_geometry.py` checks the fits. The test prints are the first parts printed.
   - Review 2 (2026-10-19) readied it for printing: the fan cable has a path, the charger is vented, the button and pot mounts are stronger, the fit allows for ASA's shrink, and there are test prints. **Start with [docs/PRINTING.md](docs/PRINTING.md)**: what to print first, settings, and what to order now. Then [docs/BUILD.md](docs/BUILD.md) takes it from printed parts to a running fan.
 - **Electronics**: Fully documented BOM, pinout, wiring diagram (SVG schematic). Parts ordered Oct 17, 2026.
-  - The carrier + PSU board v2.1 ([electronics/pcb/](electronics/pcb/README.md)) replaces the perfboard and the MP1584 modules: the Zero, both bucks and a connector for every lead on one board. Gerbers are ready to order, checked by `tools/check_pcb.py`. (v2's Gerbers were mirrored: don't order them.)
+  - The carrier + PSU board v2.2 ([electronics/pcb/](electronics/pcb/README.md)) replaces the perfboard and the MP1584 modules: the Zero, both bucks, reverse-polarity protection and a connector for every lead on one board. Gerbers are ready to order, checked by `tools/check_pcb.py`. (v2's Gerbers were mirrored: don't order them.)
 - **Firmware**: MicroPython in `firmware/`.
 - **Next**: measure the parts as they arrive ("Verify on arrival" in the electronics doc), order the board, print, bench-test.
 
@@ -78,9 +78,10 @@ table-fan/
 3. Slice in your preferred slicer. This build is **PLA**. It softens at about 55–60 °C, so keep the finished fan out of a hot parked cab; PETG or ASA would take the heat with the same files. Settings and the print order are in [docs/PRINTING.md](docs/PRINTING.md).
 
 ## Checking the geometry
-`python3 tools/check_geometry.py` renders every part and 22 fit checks with OpenSCAD and prints PASS/FAIL. It takes about five minutes on 16 cores. What it checks:
+`python3 tools/check_geometry.py` renders every part and 23 fit checks with OpenSCAD and prints PASS/FAIL. It takes about five minutes on 16 cores. What it checks:
 - the fan's intake is clear;
 - the fan fits, bears on its corner columns, and its bolts reach their inserts;
+- the head-to-base screws seat without bottoming out in their inserts;
 - the cells fit the sled, and the sled, boards, dial, charge port and button fit the base without touching each other;
 - the carrier + PSU board bears on the plate's bosses, and each boss is whole;
 - the openings go through: charge port, button, Zero plug, vents, and the fan cable's slot and floor groove;
@@ -109,7 +110,7 @@ Run it after changing any dimension. `--self-test` breaks each check on purpose,
 1. Heat-set inserts:
    - head: M2 ×4 (front face), M3 ×4 (the corner columns' front faces, 28 mm into the cavity), M3 ×2 (underneath, at the back) and M4 ×2 (the side recesses);
    - base: M3 ×8 (4 in its top surface, 4 in its corner bosses underneath).
-2. Head onto the base: 4× M3 × 16 countersunk, from inside the fan cavity down into the base, and 2× M3 × 8 pan head from inside the base, up through its roof into the head's rear inserts.
+2. Head onto the base: 4× M3 × 14 countersunk (not 16: those bottom out before the head pulls down), from inside the fan cavity down into the base, and 2× M3 × 8 pan head from inside the base, up through its roof into the head's rear inserts.
 3. Fan:
    - Turn it so its cable leaves at a bottom corner. Feed the plug down through the slot in the floor and lay the cable in the floor groove.
    - Put it in with the airflow arrow pointing out of the front.

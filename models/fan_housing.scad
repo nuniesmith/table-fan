@@ -93,8 +93,11 @@ plate_t = 3;
 boss_s = 8;                     // corner bosses for the bottom-plate screws
 m3_insert_d = 4.2;              // M3 heat-set insert pilot: check your kit
 m3_insert_depth = 6;
-// Head-to-base screws: M3 x 16 countersunk, from the fan cavity floor down
+// Head-to-base screws: M3 x 14 countersunk, from the fan cavity floor down
 // into inserts in the base. (X, Z); each lands on a boss under the roof.
+// Seated (heads 5.5-6.7 mm across), their tips land 4.2-4.9 mm into the
+// pilots, 1.1-1.8 mm off the bottom; an M3 x 16 bottoms out before it seats.
+join_screw_l = 14;
 join_pts = [[-50, 6], [50, 6], [-10, 30], [38, 30]];
 join_boss = 8;
 join_boss_h = 8;
@@ -153,7 +156,7 @@ vent_pitch = 5;
 carrier_boss_h = 5;             // the plate's bosses: the board's underside
 carrier_boss_d = 5;
 zero_usb_x = 37.5;              // the Zero's USB-C, and the rear wall's cutout for it
-zero_usb_open = [12.5, 7.5];    // X, Y: room for the plug's overmould
+zero_usb_open = [13.2, 8];      // X, Y: a plug's overmould (up to 12.35 x 6.5) plus print shrinkage
 plate_vents = [21, 41, 33, 62]; // X of the first and last slot (5 apart), Z0, Z1: under the board
 
 /* [OLED pod] */
@@ -597,6 +600,15 @@ module fan_bolts_keepout() {    // M3 x 30 bolts from the fan's front flange int
         translate([0, 0, fan_z0 - 2]) cylinder(d=5.5, h=2);                 // pan head
         translate([0, 0, fan_z0]) cylinder(d=3, h=30);
     }
+}
+// The head-to-base screws' shanks, seated: the countersink is 5.5 across
+// where the smallest head stops, the deepest the tip can go.
+join_seat_y = -ci - 1.7 + (5.5 - 3.4) * 1.8 / 3.2;
+module join_screws_keepout() {
+    assert(-ci - 1.7 + (6.72 - 3.4) * 1.8 / 3.2 - join_screw_l <= head_y0 - 4,
+           "join_screw_l: a large head leaves under 4 mm in the insert");
+    for (p = join_pts) translate([p[0], 0, p[1]])
+        y_cyl(2.9, join_seat_y - join_screw_l, join_screw_l - 2);
 }
 module rear_screws_keepout() {  // the head's two rear M3 x 8 pan heads, inside the base, and their shanks
     for (p = rear_join_pts) translate([p[0], 0, p[1]]) {

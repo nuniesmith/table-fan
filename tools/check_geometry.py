@@ -38,6 +38,7 @@ CHECKS = [
     ("fan_vs_head", "clear", "the fan fits its cavity"),
     ("fan_on_ledges", "touch", "the fan's rear corners bear on the corner columns"),
     ("fan_bolts", "clear", "the fan bolts reach their inserts in the columns"),
+    ("join_screws", "clear", "the head-to-base screws seat without bottoming out in their inserts"),
     ("cells_vs_sled", "clear", "four 18650s fit the sled"),
     ("sled_vs_body", "clear", "the sled fits the base"),
     ("boards_vs_body", "clear", "BMS, charger, carrier board (each part to its height), pot, USB-C, button and the rear screws fit the base"),
@@ -65,6 +66,7 @@ MUTATIONS = {
     "fan_vs_head": {"fan_clearance": "-0.5"},           # cavity smaller than the fan
     "fan_on_ledges": {"column_inner": "61"},            # no columns under the fan
     "fan_bolts": {"m3_insert_depth": "3"},              # bolt tails into the columns past the pilots
+    "join_screws": {"join_screw_l": "16"},              # the old M3 x 16: bottoms out in the pilot
     "cells_vs_sled": {"cell_gap": "-1"},                # pockets smaller than the cells
     "sled_vs_body": {"sled_z0": "5"},                   # sled into the front bosses
     "boards_vs_body": {"charger_pos": "[50, 4]"},       # charger out through the +X wall
@@ -161,6 +163,8 @@ def render(openscad, scad, defines, out, raw=None):
     cmd.append(str(MODELS / scad))
     proc = subprocess.run(cmd, capture_output=True, text=True)
     log = proc.stdout + proc.stderr
+    if "ERROR:" in log:                 # an assert or a syntax error: never "empty"
+        return None, log, f"OpenSCAD error (exit {proc.returncode})"
     empty = any(m in log for m in ("top level object is empty", "No top level geometry",
                                    "Nothing to export", "Current top level object is not a 3D object"))
     if out.exists() and out.stat().st_size > 0:

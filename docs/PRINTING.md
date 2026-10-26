@@ -16,7 +16,7 @@ waits for the module, so its hole spacing can be measured first. Run
    | `sled_end` | A cell slides in without force or rattle | Tight: raise `cell_gap` in `battery_sled.scad` |
    | `side_wall` | The dial pot's bushing, the knob recess, the charge socket and the button | Print it when those parts arrive (below) |
 2. **Head**, the **faceplate** and the **bail**, once `fan_fit` and `bail_joint` have passed: these depend only on the fan's standard size.
-3. **Sled + lid** and the **bottom plate**. The plate now has 8 bosses for the carrier + PSU board v2.1. If you printed it before, with 4 bosses for the old perfboard or for the v2 board (one boss at Z 47, now 42.6), reprint it (the sled hasn't changed).
+3. **Sled + lid** and the **bottom plate**. The plate now has 8 bosses for the carrier + PSU board v2.1. If you printed it before, with 4 bosses for the old perfboard or for the v2 board (one boss at (56.2, 47), now (55.7, 42.6)), reprint it (the sled hasn't changed).
 4. **Base**. It depends on the pot, charge socket and button, so print `side_wall` with the real parts first. To print it sooner, check the WH138 against the listing (M7 bushing, 24 mm body) and plan to file the 13 × 10 socket opening if your socket differs.
 5. **OLED pod**: sized from the module's listing. Check that its mounting holes are 23.3 × 23.8 mm apart before printing; otherwise set `oled_hole_dx` / `oled_hole_dy` and re-slice.
 
@@ -98,7 +98,7 @@ Not in the Oct 17 order, or decided since. Skip what's already in your kits.
   - **M4 × 16 knurled thumb screws ×2** (DIN 464), 2 steel washers and 2 M4 wave washers (bail);
   - M2 self-tapping screws, 5–10 mm, about 20, of which 8 are M2 × 6 for the board.
 - No longer needed: the fan's M3 nuts, the bail's M4 × 12 and nylon washers, and four of the M2 inserts and screws (there's one faceplate now). Nor, in the fan, the perfboard, the MP1584 mini modules and the 1N5819s: keep the minis as bench spares.
-- **The carrier + PSU board**: 5 from JLCPCB or PCBWay, from `electronics/pcb/gerber/` zipped (2 layers, 1.6 mm, 1 oz). Its parts from LCSC, from the BOM in [electronics/pcb/README.md](../electronics/pcb/README.md). The 52.3k has no confirmed LCSC number: any 0805 1 % 52.3k works.
+- **The carrier + PSU board**: 5 from JLCPCB or PCBWay, from `electronics/pcb/gerber/` zipped (2 layers, 1.6 mm, 1 oz). Its parts from LCSC, from the BOM in [electronics/pcb/README.md](../electronics/pcb/README.md); check the 52.3k's stock (any 0805 1 % 52.3k works).
 - **JST XH plugs** (2.50 mm) for the board's signal headers: XHP-2 ×3, XHP-3 and XHP-4 housings with SXH crimps, or pre-crimped XH leads (BUILD.md, the harness).
 - **Screen button**: 6 × 6 mm tactile switch, **8–9.5 mm tall**. It sits in a pocket in the wall, so a short one's stem won't reach out of it.
 - **Electronics**, from the electronics doc:
@@ -117,4 +117,4 @@ Not in the Oct 17 order, or decided since. Skip what's already in your kits.
 ## While you wait
 - Flash MicroPython to the Zero and run the bench test in `firmware/README.md` with a spare fan: the dial, the LED's colour order and the OLED.
 - When the charger arrives, measure its status pin (charging, full, **and unplugged**) before it goes near GP13.
-- When the BMS arrives, check its outline: up to about 50 × 75 fits the sled lid.
+- When the BMS arrives, check its outline: up to about 50 × 67 (or 47 × 72) fits the sled lid.

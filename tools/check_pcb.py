@@ -9,7 +9,8 @@ prints PASS/FAIL for:
            copper to the board edge (read from Edge_Cuts, which must match
            the build) and to unplated holes, hole spacing, silkscreen line
            width, text height (measured in the Gerber) and its clearance to
-           pads, solder mask over every via
+           pads, solder mask over every via, paste only on pads and clear of
+           their holes
   nets   - the copper, read from the Gerbers, joins exactly the pins in
            NETLIST below and nothing else (no opens, no shorts). NETLIST is
            written out by hand from the design notes, not taken from the
@@ -26,7 +27,7 @@ prints PASS/FAIL for:
     python3 tools/check_pcb.py --write-scad     # regenerate models/carrier_pcb.scad
     python3 tools/check_pcb.py --render out.png # the board, its parts and the base around it
     python3 tools/check_pcb.py --assembly electronics/pcb/assembly.png  # the hand-assembly map
-    python3 tools/check_pcb.py --clean-pours IN.json OUT.json  # (npm run gerbers does this)
+    python3 tools/check_pcb.py --clean IN.json OUT.json  # pours and paste, for export (npm run gerbers)
 
 Build first (see electronics/pcb/README.md). Needs shapely 2 (pip install
 shapely); --render and --assembly also need matplotlib. Exit status 1 if
@@ -67,6 +68,7 @@ RULES = {
     "min_track": 0.2,           # copper drawn with a round aperture (traces)
     "min_copper": 0.15,         # any copper feature's width (pours included)
     "min_space": 0.15,          # copper of one net to copper of another
+    "min_slit": 0.15,           # any gap in the copper, one net's own included
     "via_drill": 0.3,
     "via_pad": 0.5,
     "via_ring": 0.15,           # (pad - drill) / 2
@@ -79,8 +81,9 @@ RULES = {
     "silk_text": 1.0,           # text height, stroke included, measured in the Gerber
     "silk_to_pad": 0.15,        # silk to an opening in the mask (JLCPCB clips closer silk)
     "silk_to_edge": 0.2,
+    "via_to_opening": 0.1,      # a tented via's pad to an opening in the mask
 }
-POUR_MIN_WIDTH = 0.2            # --clean-pours removes pour copper narrower than this
+POUR_MIN_WIDTH = 0.2            # --clean removes pour copper narrower than this
 SCREW_HEAD_D = 4.2              # M2 pan head (3.8-4.0) and a little play
 
 # ---------------------------------------------------------------- netlist
@@ -90,7 +93,7 @@ SCREW_HEAD_D = 4.2              # M2 pan head (3.8-4.0) and a little play
 def _buck(t, vout):
     s = lambda n: f"{n}_{t}"
     return {
-        "GND": [f"U_{t}.GND", f"U_{t}.EP", f"CIN1_{t}.pin2", f"CIN2_{t}.pin2",
+        "GND": [f"U_{t}.GND", f"U_{t}.EP", f"U_{t}.GNDB", f"CIN1_{t}.pin2", f"CIN2_{t}.pin2",
                 f"DC_{t}.A", f"COUT1_{t}.pin2", f"COUT2_{t}.pin2", f"RFB2_{t}.pin2",
                 f"RCOMP_{t}.pin2", f"RFREQ_{t}.pin2", f"REN2_{t}.pin2"],
         "VIN": [f"U_{t}.VIN", f"CIN1_{t}.pin1", f"CIN2_{t}.pin1", f"REN1_{t}.pin1"],
@@ -133,6 +136,8 @@ def build_netlist():
     }
     for n, pins in extra.items():
         nets[n] += pins
+    nets["BST_A"].append("D_BST_A.K")       # buck A's bootstrap diode, from the 5 V rail
+    nets["V5RAW"].append("D_BST_A.A")
     return dict(nets)
 
 
@@ -218,7 +223,8 @@ BASE_FLOOR = _base_floor()
 # under one of the board's holes must not land on: base X/Z.
 _V = housing_list("plate_vents")              # X of the first and last slot (5 apart), Z0, Z1
 PLATE_FEATURES = (
-    [("vent slot", box(x - 1, _V[2], x + 1, _V[3])) for x in range(int(_V[0]), int(_V[1]) + 1, 5)]
+    [("vent slot", box(_V[0] + 5 * i - 1, _V[2], _V[0] + 5 * i + 1, _V[3]))
+     for i in range(int(round((_V[1] - _V[0]) / 5)) + 1)]
     + [("stick-on foot recess", Point(sx * 55, z).buffer(6)) for sx in (-1, 1) for z in (16, 84)]
     + [("corner screw countersink", Point(sx * 63.5, z).buffer(3.3)) for sx in (-1, 1) for z in (6.5, 93.5)]
     + [("zip-tie bridge", box(3, 89, 9, 97))]          # the one left, at (6, 93) along Z
@@ -242,7 +248,7 @@ PART_HEIGHT = [
     (r"^C_BULK$", 6.0),         # 6.3 x 5.8 electrolytic
     (r"^(CIN1|COUT1)_", 2.7),   # 1210
     (r"^(DC_|D_OR|D_BENCH|D_5V)", 2.5),  # SMA
-    (r"^D_CLAMP$", 1.1),        # SOD-323
+    (r"^D_(CLAMP|BST_)", 1.1),  # SOD-323
     (r"^J1_", 10.5),            # KF301, wires enter from the side
     (r"^J2_", 17.0),            # fan header with the fan's plug and its cable
     (r"^J[3-7]_", 15.0),        # JST-XH with its plug and wires
@@ -416,8 +422,7 @@ def slivers(img, width):
     thin = img.difference(img.buffer(-r, ARC_RES).buffer(r, ARC_RES).buffer(1e-4))
     out = []
     for g in polys(thin):
-        c = list(g.minimum_rotated_rectangle.exterior.coords)
-        length = max(math.dist(c[i], c[i + 1]) for i in range(len(c) - 1))
+        length = g.length / 2               # half the perimeter: a strip's length, bent or not
         if length > 2 * width and g.area / length < 0.9 * width:
             out.append((length, g.area / length, g.centroid))
     return out
@@ -431,7 +436,8 @@ class Board:
         self.layers = {}
         self.map = BASE_MAP
         if not placement:
-            for name in ("F_Cu", "B_Cu", "F_Mask", "B_Mask", "F_SilkScreen", "B_SilkScreen", "Edge_Cuts"):
+            for name in ("F_Cu", "B_Cu", "F_Mask", "B_Mask", "F_Paste", "B_Paste", "F_SilkScreen",
+                         "B_SilkScreen", "Edge_Cuts"):
                 self.layers[name] = read_gerber(gerbers / f"{name}.gbr")
             self.holes = read_drill(gerbers / "drill-L1-L2.drl") + read_drill(gerbers / "drill_npth.drl")
         cj = json.loads(circuit_json.read_text())
@@ -447,7 +453,6 @@ class Board:
         # the outline the fab gets: Edge_Cuts (fab checks it matches the build)
         self.outline = self.json_outline if placement else edge_outline(self.layers["Edge_Cuts"])
         self.thickness = board.get("thickness")
-        self.smt_layers = {e["layer"] for e in by["pcb_smtpad"]}
         names = {e["source_component_id"]: e["name"] for e in by["source_component"]}
         sport = {e["source_port_id"]: e for e in by["source_port"]}
         pport = {e["pcb_port_id"]: e for e in by["pcb_port"]}
@@ -456,6 +461,7 @@ class Board:
                          if e["source_component_id"] in names}
         self.comp_center = {self.comp_ref[e["pcb_component_id"]]: (e["center"]["x"], e["center"]["y"])
                             for e in by["pcb_component"] if e["pcb_component_id"] in self.comp_ref}
+        self.part_layers = {e.get("layer", "top") for e in by["pcb_component"] if e["pcb_component_id"] in self.comp_ref}
         self.pads = []          # dict(pin, x, y, layers, geom)
         for e in by["pcb_smtpad"] + by["pcb_plated_hole"]:
             sp = sport[pport[e["pcb_port_id"]]["source_port_id"]]
@@ -468,10 +474,15 @@ class Board:
                     if e.get("ccw_rotation"):
                         g = affinity.rotate(g, e["ccw_rotation"], origin=(e["x"], e["y"]))
                 layers = (e["layer"],)
+            elif e.get("shape") == "circular_hole_with_rect_pad":
+                g = box(e["x"] - e["rect_pad_width"] / 2, e["y"] - e["rect_pad_height"] / 2,
+                        e["x"] + e["rect_pad_width"] / 2, e["y"] + e["rect_pad_height"] / 2)
+                layers = ("top", "bottom")
             else:
                 g = Point(e["x"], e["y"]).buffer(e["outer_diameter"] / 2, ARC_RES)
                 layers = ("top", "bottom")
-            self.pads.append({"pin": pin, "x": e["x"], "y": e["y"], "layers": layers, "geom": g})
+            masked = bool(e.get("is_covered_with_solder_mask") or e.get("covered_with_solder_mask"))
+            self.pads.append({"pin": pin, "x": e["x"], "y": e["y"], "layers": layers, "geom": g, "masked": masked})
         self.courtyards = defaultdict(list)
         for e in by["pcb_courtyard_rect"]:
             c = e["center"]
@@ -483,14 +494,15 @@ class Board:
             self.courtyards[self.comp_ref[e["pcb_component_id"]]].append(
                 Polygon([(p["x"], p["y"]) for p in e["outline"]]))
         self.silk_text = by["pcb_silkscreen_text"]
+        self.silk_path_widths = {round(e.get("stroke_width", 0), 4) for e in by["pcb_silkscreen_path"]}
         if placement:
             self.holes = [{"x": e["x"], "y": e["y"], "d": e["hole_diameter"], "plated": False} for e in by["pcb_hole"]]
             self.holes += [{"x": e["x"], "y": e["y"], "d": e["hole_diameter"], "plated": True}
                            for e in by["pcb_plated_hole"] + by["pcb_via"]]
             top = unary_union([p["geom"] for p in self.pads if "top" in p["layers"]])
             bottom = unary_union([p["geom"] for p in self.pads if "bottom" in p["layers"]])
-            self.image = {"F_Cu": top, "B_Cu": bottom, "F_Mask": top, "B_Mask": bottom,
-                          "F_SilkScreen": Polygon(), "B_SilkScreen": Polygon()}
+            self.image = {"F_Cu": top, "B_Cu": bottom, "F_Mask": top, "B_Mask": bottom, "F_Paste": Polygon(),
+                          "B_Paste": Polygon(), "F_SilkScreen": Polygon(), "B_SilkScreen": Polygon()}
         else:
             self.image = {k: layer_image(v) for k, v in self.layers.items() if k != "Edge_Cuts"}
         self.npth = [h for h in self.holes if not h["plated"]]
@@ -505,6 +517,8 @@ def text_strokes(b, t):
     the font size in tscircuit's font), near its anchor."""
     fs, a = t["font_size"], t["anchor_position"]
     w = round(0.09 * fs, 4)
+    if any(abs(w - pw) < 2e-3 for pw in b.silk_path_widths):
+        return [], 0                # a silk line's width: its strokes can't be told apart
     along, across = len(t["text"]) * fs * 0.36 + 0.3, 0.65 * fs     # half-sizes: ~0.64 x fs a letter
     rot = round(t.get("ccw_rotation") or 0) % 180
     hx, hy = (across, along) if rot == 90 else (along, across)
@@ -545,6 +559,13 @@ def check_fab(b):
             bad.append(f"{L}: a copper sliver {length:.2f} mm long, {w:.3f} mm wide, at ({c.x:.2f}, {c.y:.2f})")
         if len(sl) > 5:
             bad.append(f"{L}: ... {len(sl) - 5} more slivers")
+        r = RULES["min_slit"] / 2
+        gaps = b.image[L].buffer(r, ARC_RES).buffer(-r, ARC_RES).difference(b.image[L].buffer(1e-4))
+        st = [(g.length / 2, g.area / (g.length / 2), g.centroid) for g in polys(gaps)
+              if g.length / 2 > 1.0 and 0.01 < g.area / (g.length / 2) < 0.9 * RULES["min_slit"]]
+        # (over 1 mm long: the short wedges where two traces leave one pad are normal)
+        for length, w, c in sorted(st, key=lambda v: -v[0])[:5]:
+            bad.append(f"{L}: a slit in the copper {length:.2f} mm long, {w:.3f} mm wide, at ({c.x:.2f}, {c.y:.2f})")
     # copper to copper, between nets (islands are nets once joined by holes)
     nets_of = island_nets(b)
     for L in ("F_Cu", "B_Cu"):
@@ -569,7 +590,7 @@ def check_fab(b):
             if not b.image[L].difference(b.outline.buffer(1e-3)).is_empty:
                 bad.append(f"{L}: copper outside the board outline")
     # holes
-    flashes = {L: [o for o in b.layers[L] if o.kind == "flash" and o.dark and o.ap[0] == "C"] for L in ("F_Cu", "B_Cu")}
+    flashes = {L: [o for o in b.layers[L] if o.kind == "flash" and o.dark and o.ap[0] in ("C", "R")] for L in ("F_Cu", "B_Cu")}
     for h in b.holes:
         if not h["plated"]:
             wall = Point(h["x"], h["y"]).buffer(h["d"] / 2, 64)
@@ -583,9 +604,9 @@ def check_fab(b):
         via = h["d"] < 0.6
         for L, p in zip(("F_Cu", "B_Cu"), pads):
             if p is None or math.dist(p.pts[0], (h["x"], h["y"])) > 1e-3:
-                bad.append(f"{L}: no round pad on the plated hole at ({h['x']}, {h['y']})")
+                bad.append(f"{L}: no pad on the plated hole at ({h['x']}, {h['y']})")
                 continue
-            ring = (p.ap[1][0] - h["d"]) / 2
+            ring = (min(p.ap[1][:2]) - h["d"]) / 2
             if via and L == "F_Cu" and (h["d"] < RULES["via_drill"] - 1e-6 or p.ap[1][0] < RULES["via_pad"] - 1e-6):
                 bad.append(f"via at ({h['x']}, {h['y']}): drill {h['d']} pad {p.ap[1][0]} "
                            f"(needs >= {RULES['via_drill']} / {RULES['via_pad']})")
@@ -603,11 +624,18 @@ def check_fab(b):
         mask = b.image[M]
         side = "top" if L == "F_Cu" else "bottom"
         for p in b.pads:
-            if side in p["layers"] and not mask.buffer(1e-3).covers(p["geom"]):
+            if side in p["layers"] and not p["masked"] and not mask.buffer(1e-3).covers(p["geom"]):
                 bad.append(f"{M}: pad {p['pin']} is covered")
         for h in b.holes:
             if h["plated"] and h["d"] < 0.6 and mask.intersects(Point(h["x"], h["y"]).buffer(h["d"] / 2)):
                 bad.append(f"{M}: the via at ({h['x']}, {h['y']}) is not tented")
+            elif h["plated"] and h["d"] < 0.6:
+                # its pad, against an opening: the fab's mask expansion would bare it
+                f = min((o for o in flashes[L]), key=lambda o: math.dist(o.pts[0], (h["x"], h["y"])), default=None)
+                r = f.ap[1][0] / 2 if f is not None and math.dist(f.pts[0], (h["x"], h["y"])) < 1e-3 else h["d"] / 2
+                d = mask.distance(Point(h["x"], h["y"])) - r
+                if d < RULES["via_to_opening"] - 1e-6:
+                    bad.append(f"{M}: the via at ({h['x']:.2f}, {h['y']:.2f}) is {max(d, 0):.3f} mm from a mask opening")
     # silkscreen
     inner = b.outline.buffer(-RULES["silk_to_edge"])
     for S, M in (("F_SilkScreen", "F_Mask"), ("B_SilkScreen", "B_Mask")):
@@ -630,17 +658,35 @@ def check_fab(b):
                 if g.area > 1e-3:
                     bad.append(f"{S}: silk within {RULES['silk_to_pad']} mm of a pad near "
                                f"({g.centroid.x:.2f}, {g.centroid.y:.2f})")
-            for h in b.holes:          # (tented vias may sit under silk)
-                if h["d"] < 0.6 and h["plated"]:
-                    continue
-                if silk.intersects(Point(h["x"], h["y"]).buffer(h["d"] / 2)):
+            # no silk over a hole: the drill takes it. Over a via only text counts
+            # (a letter drilled away); a part's outline crossing one just loses a dot
+            text = unary_union([o.geom for t in b.silk_text for o in text_strokes(b, t)[0]])
+            for h in b.holes:
+                over = silk if h["d"] >= 0.6 or not h["plated"] else text
+                if over.intersects(Point(h["x"], h["y"]).buffer(h["d"] / 2)):
                     bad.append(f"{S}: silk over the hole at ({h['x']}, {h['y']})")
     for t in b.silk_text:
         h = text_height(b, t)
-        if h is None:
+        if h is None and any(abs(round(0.09 * t["font_size"], 4) - pw) < 2e-3 for pw in b.silk_path_widths):
+            bad.append(f"silk text '{t['text']}': its stroke is as wide as a silk line's, so it can't be "
+                       f"measured: change the font size or SILK")
+        elif h is None:
             bad.append(f"silk text '{t['text']}': its strokes aren't in the Gerber where the build put it")
         elif h < RULES["silk_text"] - 1e-6:
             bad.append(f"silk text '{t['text']}' prints {h:.2f} mm tall (>= {RULES['silk_text']})")
+    # paste: only on pads, and clear of plated holes (a stencil prints it)
+    for P, side in (("F_Paste", "top"), ("B_Paste", "bottom")):
+        paste = b.image.get(P, Polygon())
+        if paste.is_empty:
+            continue
+        pads = unary_union([p["geom"] for p in b.pads if side in p["layers"]])
+        off = paste.difference(pads.buffer(1e-3))
+        for g in polys(off):
+            if g.area > 1e-3:
+                bad.append(f"{P}: {g.area:.2f} mm2 of paste off its pad near ({g.centroid.x:.2f}, {g.centroid.y:.2f})")
+        for h in b.holes:
+            if h["plated"] and paste.distance(Point(h["x"], h["y"])) < h["d"] / 2 + 0.1 - 1e-6:
+                bad.append(f"{P}: paste within 0.1 mm of the hole at ({h['x']}, {h['y']})")
     if b.thickness is not None and abs(b.thickness - BOARD_T) > 1e-6:
         bad.append(f"board thickness {b.thickness} mm in the design, {BOARD_T} expected")
     return bad
@@ -802,8 +848,8 @@ def check_fit(b):
     if det >= 0:
         bad.append("board +x maps to base +X: the board would be the mirror image of the model "
                    "(see BASE_MAP)")
-    if b.smt_layers - {"top"}:
-        bad.append(f"SMD pads on {', '.join(sorted(b.smt_layers - {'top'}))}: the map assumes parts on top")
+    if b.part_layers - {"top"}:
+        bad.append(f"parts on {', '.join(sorted(b.part_layers - {'top'}))}: the map assumes every part on top")
     outline = to_base(b.outline, b.map)
     out = outline.difference(BASE_FLOOR)
     if out.area > 1e-3:
@@ -921,8 +967,52 @@ def _shrink_text(b):
 
 
 def _edge_mismatch(b):
+    """Edge_Cuts' +x side 1 mm further out, read back through the parser."""
+    x1 = b.outline.bounds[2]
+    for o in b.layers["Edge_Cuts"]:
+        o.pts = [(x + 1 if abs(x - x1) < 1e-3 else x, y) for x, y in o.pts]
+    b.outline = edge_outline(b.layers["Edge_Cuts"])
+
+
+def _l_sliver(b):
+    """A 0.1 mm L-shaped strip of copper, 1.5 + 1.25 mm, joined to a pad."""
+    p = next(p for p in b.pads if "top" in p["layers"] and p["pin"].startswith("R_DIV1"))
+    x0, y0, x1, y1 = p["geom"].bounds
+    g = LineString([(x1, y1), (x1 + 1.5, y1), (x1 + 1.5, y1 + 1.25)]).buffer(0.05, cap_style=2, join_style=2)
+    b.image["F_Cu"] = b.image["F_Cu"].union(g)
+
+
+def _copper_by_edge(b):
     x0, y0, x1, y1 = b.outline.bounds
-    b.outline = b.outline.union(box(x1 - 1, y0, x1 + 3, y0 + 10))
+    g = box(x1 - 0.25, (y0 + y1) / 2, x1 - 0.1, (y0 + y1) / 2 + 2)
+    b.image["B_Cu"] = b.image["B_Cu"].union(g)
+
+
+def _untented_via(b):
+    v = next(h for h in b.holes if h["plated"] and h["d"] < 0.6)
+    b.image["F_Mask"] = b.image["F_Mask"].union(Point(v["x"], v["y"]).buffer(0.4))
+
+
+def _paste_on_hole(b):
+    h = next(h for h in b.holes if h["plated"] and h["d"] > 0.6)
+    b.image["F_Paste"] = b.image["F_Paste"].union(Point(h["x"], h["y"]).buffer(0.6))
+
+
+def _slit(b):
+    """A 0.1 mm slot cut 2 mm into the top copper."""
+    spot = b.image["F_Cu"].buffer(-1.5).representative_point()
+    b.image["F_Cu"] = b.image["F_Cu"].difference(box(spot.x - 1, spot.y - 0.05, spot.x + 1, spot.y + 0.05))
+
+
+def _via_under_text(b):
+    """A via drilled through a label's first stroke."""
+    v = next(h for h in b.holes if h["plated"] and h["d"] < 0.6)
+    o = text_strokes(b, next(t for t in b.silk_text if len(t["text"]) >= 3))[0][0]
+    v["x"], v["y"] = o.pts[0]
+
+
+def _no_zero(b):
+    b.pads = [p for p in b.pads if not p["pin"].startswith("U1.")]
 
 
 def _part_under_head(b):
@@ -932,7 +1022,7 @@ def _part_under_head(b):
 
 
 def _mirror_map(b):
-    b.map = (1.0, -BASE_MAP[1], BASE_MAP[2])           # v2's map: X = x + 42
+    b.map = (1.0, BASE_X0, BASE_Z0)                    # v2's map: X = x + 42
 
 
 def _boss_on_vent(b):
@@ -950,6 +1040,12 @@ SELF_TEST = {
     "fab": [("a 0.2 mm via", _thin_via, "via at"),
             ("a 0.1 mm silk line", _thin_silk, "line 0.1"),
             ("a copper sliver", _sliver, "sliver"),
+            ("an L-shaped sliver joined to a pad", _l_sliver, "sliver"),
+            ("a 0.1 mm slit in the copper", _slit, "slit"),
+            ("a via under a label", _via_under_text, "silk over the hole"),
+            ("copper 0.1 mm from the edge", _copper_by_edge, "from the board edge"),
+            ("a via left untented", _untented_via, "not tented"),
+            ("paste over a plated hole", _paste_on_hole, "of the hole"),
             ("silk against a pad", _silk_by_pad, "of a pad"),
             ("a label printed small", _shrink_text, "prints"),
             ("Edge_Cuts not the build's outline", _edge_mismatch, "Edge_Cuts differs")],
@@ -960,16 +1056,21 @@ SELF_TEST = {
     "fit": [("the board 12 mm wider (into the sled)", _grow_outline, "into the base's obstacles"),
             ("the board mapped mirrored, as in v2", _mirror_map, "mirror"),
             ("a boss on a vent slot", _boss_on_vent, "vent slot"),
+            ("the Zero missing", _no_zero, "no Zero"),
             ("J1 2.5 mm toward the pot", _j1_toward_pot, "under the dial pot")],
 }
 
 
-# ---------------------------------------------------------------- pours
-def clean_pours(src, dst, width=POUR_MIN_WIDTH):
-    """Rewrite the build's copper pours without copper narrower than `width`
-    (tscircuit's pour leaves slivers between fine-pitch pads and along
-    traces): an opening of each pour, keeping the pieces still joined to its
-    own net's copper. Gerbers are then exported from `dst`."""
+# ---------------------------------------------------------------- export
+def clean_for_export(src, dst, width=POUR_MIN_WIDTH):
+    """Write the build's circuit JSON `src` to `dst` ready for the Gerber
+    export:
+      - each copper pour without copper narrower than `width` (tscircuit's
+        pour leaves slivers between fine-pitch pads and along traces): an
+        opening of the pour, keeping the pieces still joined to its own net's
+        copper;
+      - paste drawn turned by a multiple of 90 deg rewritten as a plain
+        rectangle (the exporter drops a rotated rectangle's turn)."""
     cj = json.loads(Path(src).read_text())
     feats = {"top": [], "bottom": []}
     for e in cj:
@@ -986,10 +1087,21 @@ def clean_pours(src, dst, width=POUR_MIN_WIDTH):
                 feats[L].append(Point(e["x"], e["y"]).buffer(e["outer_diameter"] / 2, ARC_RES))
         elif t == "pcb_trace":
             for a, c in zip(e["route"], e["route"][1:]):
-                if a.get("route_type") == c.get("route_type") == "wire" and a["layer"] == c["layer"]:
-                    feats[a["layer"]].append(LineString([(a["x"], a["y"]), (c["x"], c["y"])]).buffer(a["width"] / 2, ARC_RES))
+                wires = [q for q in (a, c) if q.get("route_type") == "wire"]
+                if not wires or len({q["layer"] for q in wires}) > 1:
+                    continue                # a segment ending at a via takes its wire end's layer
+                feats[wires[0]["layer"]].append(
+                    LineString([(a["x"], a["y"]), (c["x"], c["y"])]).buffer(wires[0]["width"] / 2, ARC_RES))
     out, report = [], []
     for e in cj:
+        if e["type"] == "pcb_solder_paste" and e.get("shape") == "rotated_rect":
+            turn = round(e.get("ccw_rotation") or 0) % 180
+            if turn in (0, 90) and abs((e.get("ccw_rotation") or 0) - round(e.get("ccw_rotation") or 0)) < 1e-6:
+                e = dict(e, shape="rect")
+                if turn == 90:
+                    e["width"], e["height"] = e["height"], e["width"]
+                e.pop("ccw_rotation", None)
+                report.append(f"paste at ({e['x']:.2f}, {e['y']:.2f}) squared up")
         if e["type"] != "pcb_copper_pour":
             out.append(e)
             continue
@@ -999,8 +1111,19 @@ def clean_pours(src, dst, width=POUR_MIN_WIDTH):
         opened = pour.buffer(-width / 2, ARC_RES).buffer(width / 2, ARC_RES).intersection(pour)
         # its own net's copper is what it touches: other nets keep a clearance
         own = unary_union([g for g in feats[e["layer"]] if g.distance(pour) < 1e-3])
+        # and slits under RULES["min_slit"] between it and that copper are filled (a
+        # gap that narrow can't hold another net, which keeps >= 0.15 mm each side)
+        r = RULES["min_slit"] / 2
+        merged = unary_union([opened, own])
+        fill = merged.buffer(r, ARC_RES).buffer(-r, ARC_RES).difference(own)
+        opened = unary_union([opened, fill.buffer(0.002)])   # overlapping, not touching at a point
         keep = [g for g in polys(opened) if g.area > 1e-4 and g.intersects(own)]
-        report.append(f"{e['layer']} pour: {pour.area - sum(g.area for g in keep):.2f} mm2 of thin or loose copper removed")
+        report.append(f"{e['layer']} pour: {pour.area - sum(g.area for g in keep):.2f} mm2 net change "
+                      f"(thin or loose copper removed, same-net slits filled)")
+        for g in polys(pour.difference(unary_union(keep).buffer(1e-4) if keep else Polygon())):
+            if g.area > 1.0:
+                x0, y0, x1, y1 = g.bounds
+                report.append(f"  {g.area:.1f} mm2 of it at x {x0:.1f}..{x1:.1f}, y {y0:.1f}..{y1:.1f}")
         for k, g in enumerate(keep):
             g = orient(g, 1.0)
             n = dict(e, pcb_copper_pour_id=f"{e['pcb_copper_pour_id']}_{k}")
@@ -1189,13 +1312,13 @@ def main():
     ap.add_argument("--assembly", type=Path)
     ap.add_argument("--placement", action="store_true",
                     help="bodies and fit only, from the circuit JSON of a build with routing off")
-    ap.add_argument("--clean-pours", nargs=2, type=Path, metavar=("IN", "OUT"),
-                    help="write OUT: the circuit JSON IN with its pours' slivers removed")
+    ap.add_argument("--clean", nargs=2, type=Path, metavar=("IN", "OUT"),
+                    help="write OUT: the circuit JSON IN ready for the Gerber export (pours, paste)")
     args = ap.parse_args()
-    if args.clean_pours:
-        for line in clean_pours(*args.clean_pours):
+    if args.clean:
+        for line in clean_for_export(*args.clean):
             print(line)
-        print(f"wrote {args.clean_pours[1]}")
+        print(f"wrote {args.clean[1]}")
         return
     if not args.circuit_json.exists():
         sys.exit(f"{args.circuit_json} is missing: build the board first (electronics/pcb/README.md)")

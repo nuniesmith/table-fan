@@ -34,9 +34,9 @@ const Tri = (p: {x: number; y: number; s?: number}) => {
   const s = p.s ?? 0.7
   return <Line pts={[[p.x - s, p.y + s], [p.x, p.y], [p.x - s, p.y - s], [p.x - s, p.y + s]]} />
 }
-// Board text: a 2.1 mm font prints capitals 1.04 mm high at the stroke's
-// centre, 1.23 mm overall, with a 0.19 mm stroke (JLCPCB: >= 1 mm, >= 0.15 mm;
-// tools/check_pcb.py measures it in the Gerber).
+// Board text: a 2.1 mm font prints capitals 1.19-1.22 mm high overall (about
+// 1.0 at the stroke's centre), with a 0.19 mm stroke (JLCPCB: >= 1 mm,
+// >= 0.15 mm; tools/check_pcb.py measures it in the Gerber).
 const Label = (p: {text: string; x: number; y: number; rot?: number}) => (
   <silkscreentext text={p.text} pcbX={p.x} pcbY={p.y} pcbRotation={p.rot ?? 0} fontSize={2.1} />
 )
@@ -45,18 +45,20 @@ const Label = (p: {text: string; x: number; y: number; rot?: number}) => (
 const NOREF = {silkscreenTextVisibility: "hidden" as const}
 
 // --- RP2040-Zero ------------------------------------------------------------
-// Waveshare's dimension drawing: module 18.00 x 23.50 mm, castellated pads
-// at 2.54 mm pitch. West (top->bottom): 5V GND 3V3 GP29 GP28 GP27 GP26 GP15;
-// east: GP0..GP7; south (left->right): GP14..GP8. Side pads' first centre
-// 1.59 mm from the top edge; south pads' first 1.38 mm from the left edge.
-// Pads run 0.5 mm under the module and 2.3 mm out.
-const zeroWest = ["5V", "GND", "3V3", "GP29", "GP28", "GP27", "GP26", "GP15"]
-const zeroEast = ["GP0", "GP1", "GP2", "GP3", "GP4", "GP5", "GP6", "GP7"]
-const zeroSouth = ["GP14", "GP13", "GP12", "GP11", "GP10", "GP9", "GP8"]
+// Waveshare's dimension drawing: module 18.00 x 23.50 mm, 23 castellated pads
+// at 2.54 mm pitch: 9 down each side, 5 along the bottom (as tscircuit's own
+// rp2040-zero part: stampboard_left9_right9_bottom5). West (top->bottom): 5V
+// GND 3V3 GP29 GP28 GP27 GP26 GP15 GP14; east (top->bottom): GP0..GP8; south
+// (left->right): GP13..GP9. Side pads' centres 1.59 mm from the top and
+// bottom edges; the south ones centred. Pads run 0.5 mm under the module and
+// 2.3 mm out. (v1 and v2 had 8 + 8 + 7, which left GP14 on no castellation.)
+const zeroWest = ["5V", "GND", "3V3", "GP29", "GP28", "GP27", "GP26", "GP15", "GP14"]
+const zeroEast = ["GP0", "GP1", "GP2", "GP3", "GP4", "GP5", "GP6", "GP7", "GP8"]
+const zeroSouth = ["GP13", "GP12", "GP11", "GP10", "GP9"]
 const zeroPinLabels: Record<string, string> = {}
 zeroWest.forEach((n, i) => (zeroPinLabels[`pin${i + 1}`] = n))
-zeroEast.forEach((n, i) => (zeroPinLabels[`pin${i + 9}`] = n))
-zeroSouth.forEach((n, i) => (zeroPinLabels[`pin${i + 17}`] = n))
+zeroEast.forEach((n, i) => (zeroPinLabels[`pin${i + 10}`] = n))
+zeroSouth.forEach((n, i) => (zeroPinLabels[`pin${i + 19}`] = n))
 
 const ZeroModule = (p: At) => (
   <chip
@@ -65,6 +67,7 @@ const ZeroModule = (p: At) => (
     pinLabels={zeroPinLabels}
     pcbX={p.x}
     pcbY={p.y}
+    doNotPlace // hand-soldered: on hand, and not an LCSC part
     pcbStyle={NOREF}
     footprint={
       <footprint>
@@ -72,10 +75,10 @@ const ZeroModule = (p: At) => (
           <smtpad key={n} portHints={[`pin${k + 1}`]} pcbX={-9.9} pcbY={10.16 - k * 2.54} shape="rect" width={2.8} height={1.1} />
         ))}
         {zeroEast.map((n, k) => (
-          <smtpad key={n} portHints={[`pin${k + 9}`]} pcbX={9.9} pcbY={10.16 - k * 2.54} shape="rect" width={2.8} height={1.1} />
+          <smtpad key={n} portHints={[`pin${k + 10}`]} pcbX={9.9} pcbY={10.16 - k * 2.54} shape="rect" width={2.8} height={1.1} />
         ))}
         {zeroSouth.map((n, k) => (
-          <smtpad key={n} portHints={[`pin${k + 17}`]} pcbX={-7.62 + k * 2.54} pcbY={-12.65} shape="rect" width={1.1} height={2.8} />
+          <smtpad key={n} portHints={[`pin${k + 19}`]} pcbX={-5.08 + k * 2.54} pcbY={-12.65} shape="rect" width={1.1} height={2.8} />
         ))}
         {/* the module's sides, inside the pad rows, and a dot by the 5V pin */}
         <Line pts={[[-8.1, 11.0], [-8.1, -10.6]]} />
@@ -111,7 +114,7 @@ const ZeroModule = (p: At) => (
 const mp1584PinLabels = {
   pin1: "SW", pin2: "EN", pin3: "COMP", pin4: "FB",
   pin5: "GND", pin6: "FREQ", pin7: "VIN", pin8: "BST",
-  pin9: "EP",
+  pin9: "EP", pin10: "GNDB",
 }
 const Mp1584 = (p: At & {tag: string}) => {
   const ys = [1.905, 0.635, -0.635, -1.905]
@@ -135,6 +138,10 @@ const Mp1584 = (p: At & {tag: string}) => {
             <smtpad key={`e${k}`} portHints={[`pin${8 - k}`]} pcbX={2.7} pcbY={y} shape="rect" width={1.6} height={0.61} />
           ))}
           <smtpad portHints={["pin9"]} pcbX={0} pcbY={0} shape="rect" width={2.62} height={3.51} noSolderPaste />
+          {/* a solid GND plane on the bottom, under mask, beneath the block's
+              input loop (chip, CIN1, catch diode): no other net's trace can
+              cut it, so the diode's return runs right under its path */}
+          <smtpad portHints={["pin10"]} layer="bottom" pcbX={0.35} pcbY={3.75} shape="rect" width={15.7} height={14.5} coveredWithSolderMask noSolderPaste />
           {/* the exposed pad's paste, in two windows clear of its 1.0 mm hole */}
           <solderpaste shape="rect" pcbX={0} pcbY={1.18} width={2.42} height={0.95} />
           <solderpaste shape="rect" pcbX={0} pcbY={-1.18} width={2.42} height={0.95} />
@@ -146,7 +153,7 @@ const Mp1584 = (p: At & {tag: string}) => {
       connections={{
         SW: n("SW"), EN: n("EN"), COMP: n("COMP"), FB: n("FB"),
         GND: "net.GND", FREQ: n("FREQ"), VIN: "net.VIN", BST: n("BST"),
-        EP: "net.GND",
+        EP: "net.GND", GNDB: "net.GND",
       }}
     />
   )
@@ -182,7 +189,7 @@ const SmaDiode = (p: At & {name: string; kNet: string; aNet: string; mpn: string
 // --- SOD-323 diode: 1N4148WS ---------------------------------------------------
 // Body 1.7 x 1.25, leads to 2.5-2.7 mm. Pads 1.0 x 0.8 mm at +-1.2 mm (a
 // little long, for an iron). pin1 = K (-X, the silk bar).
-const Sod323 = (p: At & {name: string; kNet: string; aNet: string}) => (
+const Sod323 = (p: At & {name: string; kNet: string; aNet: string; dnp?: boolean}) => (
   <chip
     name={p.name}
     manufacturerPartNumber="1N4148WS"
@@ -190,6 +197,7 @@ const Sod323 = (p: At & {name: string; kNet: string; aNet: string}) => (
     pinLabels={{pin1: "K", pin2: "A"}}
     pcbX={p.x}
     pcbY={p.y}
+    doNotPlace={p.dnp}
     pcbRotation={p.rot ?? 0}
     pcbStyle={NOREF}
     footprint={
@@ -204,14 +212,15 @@ const Sod323 = (p: At & {name: string; kNet: string; aNet: string}) => (
   />
 )
 
-// --- Sunlord SWPA6045S100MT, 10 uH, 6.0 x 6.0 x 4.5 mm -------------------------
+// --- Sunlord SWPA6045S220MT, 22 uH, 6.0 x 6.0 x 4.5 mm -------------------------
 // Datasheet land: pads b 1.7 x c 5.7 mm, a = 2.8 mm between them.
-// Isat 3.2 A, DCR 48 mOhm.
+// Isat 2.2 A, rated 1.8 A. 22 uH: MPS's Table 3 range for 12 V (22-33 uH)
+// and for 5 V (15-22 uH) out; under 0.5 A peak here.
 const Inductor = (p: At & {name: string; inNet: string; outNet: string}) => (
   <chip
     name={p.name}
-    manufacturerPartNumber="SWPA6045S100MT"
-    supplierPartNumbers={{jlcpcb: ["C79272"]}}
+    manufacturerPartNumber="SWPA6045S220MT"
+    supplierPartNumbers={{jlcpcb: ["C83454"]}}
     pinLabels={{pin1: "IN", pin2: "OUT"}}
     pcbX={p.x}
     pcbY={p.y}
@@ -362,8 +371,9 @@ const TestPoint = (p: At & {name: string; net: string}) => (
 const LCSC: Record<string, string> = {
   "10k": "C17414", "22k": "C17560", "24.9k": "C17571", "68.1k": "C17795",
   "100k": "C149504", "140k": "C17460", "200k": "C17539",
+  "52.3k": "C273887", // YAGEO RC0805FR-0752K3L, 1 %
   "100nF": "C28233", "220pF": "C107145", "1nF": "C46653",
-  "10uF": "C730494", // Samsung CL32A106KATLNNE, 25 V X5R 1210
+  "10uF": "C138687", // Samsung CL32B106KBJNNNE, 50 V X7R 1210 (VIN: 16.8 V, up to ~26 V at switch-on)
   "22uF": "C52306", // Samsung CL32A226KAJNNNE, 25 V X5R 1210
 }
 const R = (p: At & {name: string; value: string; n1: string; n2: string; mpn?: string}) => (
@@ -396,9 +406,12 @@ const C = (p: At & {name: string; value: string; n1: string; n2: string; size?: 
 )
 
 // --- MP1584 buck --------------------------------------------------------------------
-// Datasheet typical application: CIN 10 uF, L 10 uH, RFREQ 200k (~500 kHz),
-// catch diode, COUT 22 uF, BST 100 nF, EN 100k/24.9k (on above ~7.5 V),
-// COMP 220 pF + 68.1k to GND, FB = 0.8 V.
+// MPS datasheet: CIN 10 uF (50 V X7R), L 22 uH (Table 3), RFREQ 200k
+// (~485 kHz), catch diode, COUT 22 uF, BST 100 nF, EN 100k/24.9k (on above
+// ~7.5 V), FB = 0.8 V. COMP 220 pF + 68.1k to GND is the front-page circuit's
+// network, not Table 3's: checked here at 56-61 deg phase margin, 20-56 kHz
+// crossover. The 12 V buck runs at VOUT/VIN 72-91 %, so it gets the external
+// bootstrap diode the datasheet asks for above 65 % (from the 5 V rail).
 //
 // Layout, chip turned 90 deg so its pins face +Y and -Y:
 //   top row    BST VIN FREQ GND  -> CIN1 across VIN..GND right above the
@@ -408,10 +421,11 @@ const C = (p: At & {name: string; value: string; n1: string; n2: string; size?: 
 //   SW (bottom-left) -> catch diode right below it, CBST up the chip's left
 //   side to BST, the inductor beyond, the output caps on its far end.
 // The input loop (CIN1 -> VIN -> SW -> diode -> GND) closes through the
-// ground pours under the chip, a chip's width across.
+// chip's bottom GND plane: vias at the diode's anode and by CIN1, and the
+// exposed pad's hole, join it to the top.
 // `flip` turns the whole block 180 deg, so its layout (and the drawn paths,
 // which are in the chip's own frame) stays the same.
-const Buck = (p: {tag: string; x: number; y: number; flip?: boolean; vout: string; fbTop: string; fbTopMpn?: string}) => {
+const Buck = (p: {tag: string; x: number; y: number; flip?: boolean; vout: string; fbTop: string; fbTopMpn?: string; bstDiode?: boolean}) => {
   const {tag, vout} = p
   const n = (s: string) => `net.${s}_${tag}`
   const k = p.flip ? -1 : 1
@@ -422,6 +436,14 @@ const Buck = (p: {tag: string; x: number; y: number; flip?: boolean; vout: strin
       <Mp1584 tag={tag} {...at(0, 0, 90)} />
       {/* solder-access hole through the exposed pad, open on the back */}
       <via pcbX={p.x} pcbY={p.y} holeDiameter={1.0} outerDiameter={1.8} connectsTo="net.GND" tented="exposed" />
+      {/* the input loop's return: diode anode, CIN1 and CIN2 down to the bottom plane */}
+      {([[-9.6, -7.1], [-8.4, -7.1], [3.2, 4.9], [-3.0, 7.75]] as [number, number][]).map(([dx, dy], i) => {
+        const v = at(dx, dy)
+        return <via key={`gv${i}`} pcbX={v.x} pcbY={v.y} holeDiameter={0.3} outerDiameter={0.7} connectsTo="net.GND" />
+      })}
+      {p.bstDiode && (
+        <Sod323 name={`D_BST_${tag}`} kNet={n("BST")} aNet="net.V5RAW" {...at(-5.0, 5.8, 90)} />
+      )}
       <C name={`CIN1_${tag}`} value="10uF" size="1210" n1="net.VIN" n2="net.GND" {...at(0.635, 5.6, 0)} />
       <C name={`CIN2_${tag}`} value="100nF" n1="net.VIN" n2="net.GND" {...at(-3.0, 5.6, 90)} />
       <R name={`RFREQ_${tag}`} value="200k" n1={n("FREQ")} n2="net.GND" {...at(4.4, 7.0, 270)} />
@@ -444,6 +466,7 @@ const Buck = (p: {tag: string; x: number; y: number; flip?: boolean; vout: strin
       <Wire tag={tag} name="sw_cbst" from={`.U_${tag} > .SW`} to={`.CBST_${tag} > .pin2`} w={0.6} />
       <Wire tag={tag} name="sw_l" from={`.CBST_${tag} > .pin2`} to={`.L_${tag} > .IN`} w={0.6} />
       <Wire tag={tag} name="bst" from={`.U_${tag} > .BST`} to={`.CBST_${tag} > .pin1`} w={0.3} path={[[-4.0, 2.7]]} />
+      {p.bstDiode && <Wire tag={tag} name="bst_d" from={`.D_BST_${tag} > .K`} to={`.CBST_${tag} > .pin1`} w={0.3} />}
       <Wire tag={tag} name="vin" from={`.U_${tag} > .VIN`} to={`.CIN1_${tag} > .pin1`} w={0.6} />
       <Wire tag={tag} name="vin2" from={`.CIN1_${tag} > .pin1`} to={`.CIN2_${tag} > .pin1`} w={0.6} />
       <Wire tag={tag} name="gnd" from={`.U_${tag} > .GND`} to={`.CIN1_${tag} > .pin2`} w={0.6} />
@@ -491,7 +514,7 @@ const HOLES: [number, number][] = [
   [21, -43.5],
   [-13.5, -43.5],
   [1.5, -19.8],
-  [-14.2, -7.4],
+  [-13.7, -7.4],
   [-5.5, 9.5],
   [-13.5, 24],
   [21, 43.5],
@@ -511,9 +534,9 @@ export default () => (
     minViaHoleDiameter={0.3}
     minViaPadDiameter={0.7}
     minTraceWidth={0.25}
-    minTraceToPadEdgeClearance={0.16}
+    minTraceToPadEdgeClearance={0.17}
     minPadEdgeToPadEdgeClearance={0.2}
-    minViaEdgeToPadEdgeClearance={0.2}
+    minViaEdgeToPadEdgeClearance={0.3} // also keeps GND vias off GND pads' mask openings
     minViaHoleEdgeToViaHoleEdgeClearance={0.5}
     minTraceToHoleEdgeClearance={0.3}
     minBoardEdgeClearance={0.5}
@@ -526,6 +549,10 @@ export default () => (
     // the router adds GND traces and vias only where a pad's patch of pour
     // needs joining to the rest
     routeRemaining={false}
+    // tscircuit's routing DRC counts only traces, not copper joined through
+    // the bottom planes and their vias; tools/check_pcb.py checks the copper
+    // itself, stricter, and `npm run gerbers` ends with it
+    routingDrcChecksDisabled
   >
     <net name="GND" isGroundNet routingPhaseIndex={1} />
     <net name="VIN" isPowerNet nominalTraceWidth={0.5} routingPhaseIndex={0} />
@@ -550,8 +577,8 @@ export default () => (
 
     {/* Bucks: A = 12 V fan rail, B = 5 V for the Zero; each block turned
         180 deg, its inductor toward the board's +x side */}
-    <Buck tag="A" x={11.8} y={-6.18} flip vout="net.V12" fbTop="140k" />
-    <Buck tag="B" x={-7.1} y={-6.18} flip vout="net.V5RAW" fbTop="52.3k" fbTopMpn="0805W8F5232T5E" />
+    <Buck tag="A" x={11.8} y={-6.18} flip bstDiode vout="net.V12" fbTop="140k" />
+    <Buck tag="B" x={-7.1} y={-6.18} flip vout="net.V5RAW" fbTop="52.3k" fbTopMpn="RC0805FR-0752K3L" />
 
     {/* VIN in, and its bulk capacitor: damps the ringing when the dial's switch
         connects the pack through its leads to the bucks' ceramic inputs */}
@@ -578,12 +605,13 @@ export default () => (
     {/* 12 V diode-OR: pack buck and bench input join at FAN12 */}
     <SmaDiode name="D_OR" mpn="SS34" lcsc="C115205" kNet="net.FAN12" aNet="net.V12" x={14} y={-28} rot={90} />
     <SmaDiode name="D_BENCH" mpn="SS34" lcsc="C115205" kNet="net.FAN12" aNet="net.BENCH12" x={10.5} y={-34} rot={270} />
-    {/* 5 V feed protection (SS14): buck B -> Zero 5V pin, so USB can't back-feed the buck */}
-    <SmaDiode name="D_5V" mpn="SS14" lcsc="C2480" kNet="net.V5" aNet="net.V5RAW" x={1} y={14} rot={270} />
+    {/* 5 V feed protection (SS14): buck B -> Zero 5V pin, so USB can't back-feed the buck;
+        beside the Zero's 5V pad, at its top-left corner */}
+    <SmaDiode name="D_5V" mpn="SS14" lcsc="C2480" kNet="net.V5" aNet="net.V5RAW" x={-9.5} y={37.5} rot={90} />
 
     {/* Battery divider 100k/22k + 100nF -> GP26 (on the switched VIN) */}
-    <R name="R_DIV1" value="100k" n1="net.VIN" n2="net.BATT_SENSE" x={8.5} y={7.5} rot={180} />
-    <R name="R_DIV2" value="22k" n1="net.BATT_SENSE" n2="net.GND" x={5} y={7.5} rot={180} />
+    <R name="R_DIV1" value="100k" n1="net.VIN" n2="net.BATT_SENSE" x={8.5} y={7.0} rot={180} />
+    <R name="R_DIV2" value="22k" n1="net.BATT_SENSE" n2="net.GND" x={5} y={7.0} rot={180} />
     <C name="C_DIV" value="100nF" n1="net.BATT_SENSE" n2="net.GND" x={5} y={10} rot={180} />
 
     {/* Tach pull-up 10k to 3V3 + 1nF -> GP14 */}
@@ -592,7 +620,8 @@ export default () => (
 
     {/* Charger status: 10k series + optional 1N4148 clamp to 3V3 -> GP13 */}
     <R name="R_STAT" value="10k" n1="net.CHG_RAW" n2="net.CHG_STAT" x={15} y={12} rot={90} />
-    <Sod323 name="D_CLAMP" kNet="net.V3" aNet="net.CHG_STAT" x={15} y={16} rot={270} />
+    {/* fitted by hand, and only if the charger's STAT pin measures above 3.3 V */}
+    <Sod323 name="D_CLAMP" kNet="net.V3" aNet="net.CHG_STAT" x={15} y={16} rot={270} dnp />
 
     {/* Connectors */}
     <HoleConn
@@ -617,7 +646,7 @@ export default () => (
     {/* Test points */}
     <TestPoint name="TP_VIN" net="net.VIN" x={5.5} y={-20.3} />
     <TestPoint name="TP_12V" net="net.FAN12" x={14} y={-36} />
-    <TestPoint name="TP_5V" net="net.V5" x={-2} y={18.8} />
+    <TestPoint name="TP_5V" net="net.V5" x={-8.6} y={44.6} />
     <TestPoint name="TP_3V3" net="net.V3" x={-9.8} y={27.5} />
     <TestPoint name="TP_GND" net="net.GND" x={-9.8} y={31} />
 
@@ -635,7 +664,7 @@ export default () => (
     <copperpour layer="bottom" connectsTo="net.GND" clearance={0.32} boardEdgeMargin={0.5} useThermalReliefs />
 
     {/* Silkscreen: what each connector is, which way round, test points */}
-    <Label text="CARRIER+PSU v2.1" x={11.3} y={-16.6} />
+    <Label text="CARRIER+PSU V2.1" x={11.3} y={-16.2} />
     <Label text="FAN" x={20.5} y={-20.5} />
     <Label text="DIAL" x={15.4} y={21.5} rot={90} />
     <Label text="BENCH" x={13} y={-38.3} />
@@ -644,7 +673,7 @@ export default () => (
     <Label text="OLED" x={19.4} y={41.3} />
     <Label text="12V" x={17.5} y={-36} />
     <Label text="VIN" x={9} y={-20.3} />
-    <Label text="5V" x={-4.5} y={18.8} />
+    <Label text="5V" x={-8.6} y={42.5} />
     <Label text="3V3" x={-12.6} y={27.5} />
     <Label text="GND" x={-12.6} y={31} />
   </board>

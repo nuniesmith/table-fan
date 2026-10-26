@@ -50,8 +50,9 @@ assembly and ordering are in `electronics/pcb/README.md`.
 | Tactile button 6×6mm | 1 | 6×6 mm tactile switch, **8–9.5 mm tall** (**to order** – not in the current parts order) | Screen on/off toggle: pushed into a pocket in the +X wall from outside, legs through to the inside; wired to GP11 + GND. A shorter switch's stem won't reach out of the pocket |
 
 ## Pinout – Waveshare RP2040-Zero (from the board in the photo)
-Left edge (top→bottom): **5V, GND, 3V3, GP29, GP28, GP27, GP26, GP15 … GP8**.
-Right edge (top→bottom): **GP0 … GP7**. USB-C on top; BOOT/RESET buttons and a
+Left edge (top→bottom): **5V, GND, 3V3, GP29, GP28, GP27, GP26, GP15, GP14**.
+Bottom edge (left→right): **GP13, GP12, GP11, GP10, GP9**.
+Right edge (top→bottom): **GP0 … GP8**. USB-C on top; BOOT/RESET buttons and a
 WS2812 RGB LED (on **GP16**) in the middle. No mounting holes – the Zero
 solders down via its castellated edges or friction-fits in a printed slot.
 
@@ -188,7 +189,11 @@ for a routine overnight top-up, click the dial off. Don't charge in a hot cab:
 the 35E charges at 0–45 °C and the module has no temperature sensing.
 
 **BMS.** Many 40 A "balance" boards are common-port (no C− pad): the charger
-connects to P+ and P−. Their over-discharge cutoff (about 2.5–2.7 V per cell)
+connects to P+ and P−. On one with a separate C− pad, the charger's − goes to
+C−, and J6 gets the status wire only, pin 2 left open: a GND wire from the charger
+to J6 would join C− to P− and let charge current bypass the BMS's charge cutoff.
+The status pin still sees the board's GND, through the BMS.
+Their over-discharge cutoff (about 2.5–2.7 V per cell)
 sits below the firmware's 3.3 V per cell, so the firmware cuts first. Balancing
 is tens of mA and only near 4.2 V per cell: it keeps matched cells matched but
 won't rescue a mismatched pack, so check all four cells read within 0.02 V of
@@ -241,7 +246,7 @@ with `view = "base_layout"` shows them from above.
 - **On the sled's lid**, on foam tape: the 4S BMS (46 × 60 footprint at X -64..-18) and,
   beside it, the charger (X -12..13, Z 40..75), under the left vent slots in the base's top,
   which open into the head's duct, so the fan draws air past it.
-  Measure the BMS on arrival: up to about 50 × 75 fits the lid beside the charger.
+  Measure the BMS on arrival: up to about 50 × 67 (or 47 × 72) fits the lid beside the charger.
 - **On the plate, +X of the sled**: the carrier + PSU board on 8 M2 bosses (X 18..58.5,
   Z 3.5..96.5), with a 15 × 20 mm notch out of its +X side round the dial pot
   (X 43.5..58.5, Z 14..34). Its 12 V buck, the one that warms, sits under the other vent slots in the base's top.

@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsci build carrier-psu.tsx --disable-parts-engine",
     "place": "tsci build carrier-psu.tsx --disable-parts-engine --routing-disabled",
-    "gerbers": "npm run build && python3 ../../tools/check_pcb.py --clean-pours dist/carrier-psu/circuit.json dist/clean.circuit.json && tsci export dist/clean.circuit.json -f gerbers -o \"$PWD/dist/gerbers.zip\" --disable-parts-engine && cd gerber && unzip -o -q ../dist/gerbers.zip",
+    "gerbers": "npm run build && python3 ../../tools/check_pcb.py --clean dist/carrier-psu/circuit.json dist/clean.circuit.json && tsci export dist/clean.circuit.json -f gerbers -o \"$PWD/dist/gerbers.zip\" --disable-parts-engine && cd gerber && unzip -o -q ../dist/gerbers.zip && cd ../../.. && python3 tools/check_pcb.py",
     "assembly": "cd ../.. && python3 tools/check_pcb.py --assembly electronics/pcb/assembly.png"
   },
   "devDependencies": {
